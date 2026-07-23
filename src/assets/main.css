@@ -1,35 +1,92 @@
-@import './base.css';
+:root {
+  /* Paleta de Colores FinSet */
+  --bg-app: #f4f5fa;
+  --bg-card: #ffffff;
 
-#app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  font-weight: normal;
+  --primary: #7c3aed;         /* Violeta principal */
+  --primary-hover: #6d28d9;
+  --primary-light: #f3e8ff;
+
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+
+  /* Bordes y Sombras */
+  --border-color: #e2e8f0;    /* 👈 Línea limpia y definida */
+  --border-focus: #7c3aed;
+
+  --radius-card: 24px;        /* Esquinas bien redondeadas */
+  --radius-input: 12px;
+  --radius-pill: 50px;
+
+  --shadow-card: 0 4px 20px rgba(15, 23, 42, 0.03);
 }
 
-a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-  padding: 3px;
+/* Reset Global */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
-@media (hover: hover) {
-  a:hover {
-    background-color: hsla(160, 100%, 37%, 0.2);
-  }
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
 }
 
-@media (min-width: 1024px) {
-  body {
-    display: flex;
-    place-items: center;
-  }
-
-  #app {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    padding: 0 2rem;
-  }
+/* 🧱 COMPONENTE GLOBAL: TARJETA */
+.card {
+  background: var(--bg-card);
+  padding: 24px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-color); /* 👈 Bordes definidos para todas las vistas */
+  box-shadow: var(--shadow-card);
 }
+
+/* 📝 COMPONENTES GLOBALES DE FORMULARIO */
+.input, select.input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-input);
+  background: #f8fafc;
+  font-size: 0.95rem;
+  color: var(--text-main);
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.input:focus, select.input:focus {
+  border-color: var(--border-focus);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+/* 🔘 BOTÓN PRINCIPAL GLOBAL */
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+}
+
+/* 🏷️ BADGES GLOBALES */
+.badge {
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.badge.success { background: #dcfce7; color: #15803d; }
+.badge.danger { background: #fee2e2; color: #b91c1c; }
