@@ -1,3 +1,15 @@
+<script setup lang="ts">
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
+
+const logout = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  router.push('/login')
+}
+</script>
+
 <template>
   <aside class="sidebar">
     <div class="logo">
@@ -17,6 +29,12 @@
         <span>🔐</span> Bóveda
       </RouterLink>
     </nav>
+
+    <div class="logout-section">
+      <button @click="logout" class="btn-logout">
+        🚪 Cerrar Sesión
+      </button>
+    </div>
   </aside>
 </template>
 
@@ -32,22 +50,10 @@
   box-sizing: border-box;
 }
 
-.logo {
-  padding: 0 20px;
-  margin-bottom: 30px;
-}
+.logo { padding: 0 20px; margin-bottom: 30px; }
+.logo h2 { margin: 0; color: #4fe1a5; font-size: 1.5rem; }
 
-.logo h2 {
-  margin: 0;
-  color: #4fe1a5;
-  font-size: 1.5rem;
-}
-
-.nav-links {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
+.nav-links { display: flex; flex-direction: column; gap: 8px; flex: 1; }
 
 .nav-item {
   display: flex;
@@ -59,16 +65,24 @@
   font-size: 1rem;
   transition: all 0.2s ease;
 }
-
-.nav-item:hover {
-  background-color: #2d3748;
-  color: white;
-}
-
+.nav-item:hover { background-color: #2d3748; color: white; }
 .router-link-active {
   background-color: #2b6cb0;
   color: white;
   border-left: 4px solid #4fe1a5;
   font-weight: bold;
 }
+
+.logout-section { padding: 20px; }
+.btn-logout {
+  width: 100%;
+  padding: 10px;
+  background: #e53e3e;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.btn-logout:hover { background: #c53030; }
 </style>

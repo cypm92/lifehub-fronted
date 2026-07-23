@@ -1,30 +1,55 @@
-<script setup>
+<script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import axios from 'axios'
+import api from '../services/api'
 
-const API_URL = 'http://127.0.0.1:8000'
+interface User {
+  id: number
+  name: string
+  email: string
+  role: string
+}
 
-const users = ref([])
-const transactions = ref([])
+interface Transaction {
+  id: number
+  concept: string
+  type: string
+  amount: number
+  user_id: number
+  created_at?: string
+}
+
+const users = ref<User[]>([])
+const transactions = ref<Transaction[]>([])
 
 const newUser = ref({ name: '', email: '', role: 'editor' })
 const newTransaction = ref({
   concept: '',
   amount: 0,
   type: 'gasto_fijo',
-  user_id: null
+  user_id: null as number | null
 })
 
 const fetchData = async () => {
   try {
-    const resUsers = await axios.get(`${API_URL}/users`)
-    users.value = resUsers.data
-
-    const resTrans = await axios.get(`${API_URL}/transactions`)
+    // 1. Cargar movimientos financieros
+    const resTrans = await api.get('/transactions')
     transactions.value = resTrans.data
 
+    // 2. Intentar cargar lista de usuarios o usar el usuario activo
+    try {
+      const resUsers = await api.get('/users')
+      users.value = resUsers.data
+    } catch {
+      // Si no existe la lista pública de usuarios, usamos el usuario del localStorage
+      const loggedUser = JSON.parse(localStorage.getItem('user') || '{}')
+      if (loggedUser && loggedUser.id) {
+        users.value = [loggedUser]
+      }
+    }
+
+    // Seleccionar por defecto el primer usuario en el formulario
     if (users.value.length > 0 && !newTransaction.value.user_id) {
-      newTransaction.value.user_id = users.value[0].id
+      newTransaction.value.user_id = users.value[0]?.id ?? null
     }
   } catch (error) {
     console.error("Error al conectar con el backend:", error)
@@ -34,10 +59,14 @@ const fetchData = async () => {
 const createUser = async () => {
   if (!newUser.value.name || !newUser.value.email) return
   try {
-    await axios.post(`${API_URL}/users`, newUser.value)
+    // Registramos al nuevo usuario enviando una contraseña por defecto
+    await api.post('/auth/register', {
+      ...newUser.value,
+      password: 'password123'
+    })
     newUser.value = { name: '', email: '', role: 'editor' }
     await fetchData()
-  } catch (error) {
+  } catch (error: any) {
     alert(error.response?.data?.detail || "Error al crear usuario")
   }
 }
@@ -45,11 +74,11 @@ const createUser = async () => {
 const createTransaction = async () => {
   if (!newTransaction.value.concept || newTransaction.value.amount <= 0) return
   try {
-    await axios.post(`${API_URL}/transactions`, newTransaction.value)
+    await api.post('/transactions', newTransaction.value)
     newTransaction.value.concept = ''
     newTransaction.value.amount = 0
     await fetchData()
-  } catch (error) {
+  } catch (error: any) {
     alert(error.response?.data?.detail || "Error al registrar movimiento")
   }
 }
@@ -142,6 +171,7 @@ onMounted(() => {
 .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
 input, select, button { padding: 10px; border: 1px solid #ccc; border-radius: 4px; }
 button { background-color: #2e7d32; color: white; border: none; cursor: pointer; }
+button:disabled { background-color: #a5d6a7; cursor: not-allowed; }
 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
 .income { color: green; font-weight: bold; }
