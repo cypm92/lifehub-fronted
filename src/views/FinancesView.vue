@@ -1,7 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import api from '../services/api'
 
+// Importar los nuevos subcomponentes
+import WeeklyControlTab from '../components/finance/WeeklyControlTab.vue'
+import GlobalBudgetTab from '../components/finance/GlobalBudgetTab.vue'
+import FixedExpensesPanel from '../components/finance/FixedExpensesPanel.vue'
+import ExtrasTab from '../components/finance/ExtrasTab.vue'
+import SavingsTab from '../components/finance/SavingsTab.vue'
+
+// --- INTERFACES ---
 interface User {
   id: number
   name: string
@@ -9,30 +17,129 @@ interface User {
   role: string
 }
 
+interface Category {
+  id: number
+  name: string
+  icon: string
+  color: string
+  type: string
+}
+
+interface CategorySummary {
+  category: Category
+  planned_amount: number
+  actual_spent: number
+  percentage_used: number
+}
+
+interface MonthlyBudgetSummary {
+  month_code: string
+  expected_income: number
+  actual_income: number
+  total_planned_expense: number
+  total_actual_expense: number
+  items: CategorySummary[]
+}
+
 interface Transaction {
   id: number
   concept: string
-  type: string
   amount: number
-  user_id: number
+  type: string
+  month_code: string
+  date: string
+  category?: Category
+  user?: User
 }
 
-const users = ref<User[]>([])
-const transactions = ref<Transaction[]>([])
+interface WeeklyExpense {
+  id: number
+  month_code: string
+  week_number: number
+  week_date_label: string
+  category_name: string
+  allocated_amount: number
+  status: 'Pagado' | 'Parado' | 'Esperando'
+}
 
-const newUser = ref({ name: '', email: '', role: 'editor' })
-const newTransaction = ref({
-  concept: '',
-  amount: 0,
-  type: 'gasto_fijo',
-  user_id: null as number | null
+interface FixedExpense {
+  id: number
+  fixed_expense_id: number
+  concept: string
+  amount: number
+  description: string
+  due_day: number
+  due_date: string
+  status: 'Esperando' | 'Pagado'
+  end_date?: string | null
+  installments_total?: number | null
+  installments_paid: number
+  installments_pending?: number | null
+  installments_percentage?: number | null
+  group_id?: number | null
+  group_name?: string | null
+  group_color?: string | null
+}
+
+interface ExtraExpense {
+  id: number
+  concept: string
+  description: string
+  amount: number
+  expense_date: string
+  status: 'Pagado' | 'Pendiente'
+  category_id?: number | null
+  category_name?: string | null
+  category_color?: string | null
+}
+
+// --- ESTADOS ---
+const activeTab = ref<'semanal' | 'resumen' | 'fijos' | 'extras' | 'ahorros'>('resumen')
+const getInitialMonth = () => new Date().toISOString().slice(0, 7)
+const currentMonth = ref<string>(getInitialMonth())
+
+const users = ref<User[]>([])
+const categories = ref<Category[]>([])
+const transactions = ref<Transaction[]>([])
+const summary = ref<MonthlyBudgetSummary | null>(null)
+const weeklyExpenses = ref<WeeklyExpense[]>([])
+const fixedExpenses = ref<FixedExpense[]>([])
+const extraExpenses = ref<ExtraExpense[]>([])
+const savingsSources = ref<any[]>([])
+
+// --- FECHAS ---
+const formattedMonthName = computed(() => {
+  const parts = currentMonth.value.split('-')
+  const yearStr = parts[0] ?? '2026'
+  const monthStr = parts[1] ?? '01'
+  const date = new Date(parseInt(yearStr, 10), parseInt(monthStr, 10) - 1, 1)
+  const name = date.toLocaleString('es-ES', { month: 'long', year: 'numeric' })
+  return name.charAt(0).toUpperCase() + name.slice(1)
 })
 
-// Carga de datos
-const fetchData = async () => {
+const changeMonth = (offset: number) => {
+  const parts = currentMonth.value.split('-').map(Number)
+  const year = parts[0] ?? new Date().getFullYear()
+  const month = parts[1] ?? 1
+  const date = new Date(year, month - 1 + offset, 1)
+  currentMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+}
+
+// --- CARGA DE DATOS ---
+const loadData = async () => {
   try {
-    const resTrans = await api.get('/transactions')
+    await loadFixedExpenses()
+    await loadExtraExpenses()
+    savingsSources.value = (await api.get('/savings-sources')).data
+
+    const resSummary = await api.get(`/budgets/summary/${currentMonth.value}`)
+    summary.value = resSummary.data
+
+    const resTrans = await api.get(`/transactions/${currentMonth.value}`)
     transactions.value = resTrans.data
+
+    const resCat = await api.get('/categories')
+    categories.value = resCat.data
 
     try {
       const resUsers = await api.get('/users')
@@ -42,231 +149,262 @@ const fetchData = async () => {
       if (loggedUser?.id) users.value = [loggedUser]
     }
 
-    if (users.value.length > 0 && !newTransaction.value.user_id) {
-      newTransaction.value.user_id = users.value[0]?.id ?? null
-    }
+    await loadWeeklyExpenses()
   } catch (error) {
-    console.error("Error al conectar con el backend:", error)
+    console.error('Error cargando los datos financieros:', error)
   }
 }
 
-// CÁLCULOS PARA LAS TARJETAS KPI
-const totalIncome = computed(() => {
-  return transactions.value
-      .filter(t => t.type === 'ingreso')
-      .reduce((acc, t) => acc + t.amount, 0)
-})
-
-const totalExpenses = computed(() => {
-  return transactions.value
-      .filter(t => t.type !== 'ingreso')
-      .reduce((acc, t) => acc + t.amount, 0)
-})
-
-const totalBalance = computed(() => totalIncome.value - totalExpenses.value)
-
-const createTransaction = async () => {
-  if (!newTransaction.value.concept || newTransaction.value.amount <= 0) return
+const loadFixedExpenses = async () => {
   try {
-    await api.post('/transactions', newTransaction.value)
-    newTransaction.value.concept = ''
-    newTransaction.value.amount = 0
-    await fetchData()
-  } catch (error: any) {
-    alert(error.response?.data?.detail || "Error al registrar movimiento")
+    const res = await api.get(`/fixed-expenses/${currentMonth.value}`)
+    fixedExpenses.value = res.data
+  } catch (error) {
+    console.error('Error cargando los gastos fijos:', error)
   }
 }
 
-onMounted(() => {
-  fetchData()
-})
+const loadWeeklyExpenses = async () => {
+  try {
+    const res = await api.get(`/weekly-expenses/${currentMonth.value}`)
+    weeklyExpenses.value = res.data
+  } catch (error) {
+    console.error('Error cargando gastos semanales:', error)
+  }
+}
+
+const toggleWeeklyStatus = async (item: WeeklyExpense) => {
+  const nextStatusMap: Record<string, 'Pagado' | 'Parado' | 'Esperando'> = {
+    'Esperando': 'Pagado',
+    'Pagado': 'Parado',
+    'Parado': 'Esperando'
+  }
+  const newStatus = nextStatusMap[item.status] || 'Esperando'
+
+  try {
+    await api.patch(`/weekly-expenses/${item.id}`, { status: newStatus })
+    item.status = newStatus
+  } catch {
+    alert('Error al actualizar el estado semanal')
+  }
+}
+
+const loadExtraExpenses = async () => {
+  try {
+    const res = await api.get(`/extra-expenses/${currentMonth.value}`)
+    extraExpenses.value = res.data
+  } catch (error) {
+    console.error('Error cargando gastos extra:', error)
+  }
+}
+
+const updateWeeklyAmount = async (item: WeeklyExpense, allocated_amount: number) => {
+  try {
+    await api.patch(`/weekly-expenses/${item.id}`, { allocated_amount })
+    item.allocated_amount = allocated_amount
+  } catch {
+    alert('Error al actualizar el presupuesto semanal')
+  }
+}
+
+watch(currentMonth, () => { loadData() })
+
+// --- ACCIONES DE PRESUPUESTO ---
+const saveBudgetItem = async (category_id: number, planned_amount: number) => {
+  try {
+    await api.post(`/budgets/set-item?month_code=${currentMonth.value}`, { category_id, planned_amount })
+    await loadData()
+  } catch {
+    alert('Error al guardar el límite de la categoría')
+  }
+}
+
+const clonePreviousMonth = async () => {
+  const parts = currentMonth.value.split('-').map(Number)
+  const prevDate = new Date(parts[0]!, parts[1]! - 2, 1)
+  const fromMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`
+
+  if (confirm(`¿Copiar la plantilla de ${fromMonth} a ${currentMonth.value}?`)) {
+    try {
+      await api.post('/budgets/clone', { from_month: fromMonth, to_month: currentMonth.value })
+      await loadData()
+    } catch (error: any) {
+      alert(error.response?.data?.detail || 'Error al clonar el presupuesto')
+    }
+  }
+}
+
+const createTransaction = async (txData: any) => {
+  try {
+    await api.post('/transactions', { ...txData, month_code: currentMonth.value, user_id: users.value[0]?.id || null })
+    await loadData()
+  } catch (error: any) {
+    alert(error.response?.data?.detail || 'Error al registrar el movimiento')
+  }
+}
+
+const updateIncome = async (id: number, txData: { concept: string; amount: number }) => {
+  try {
+    await api.put(`/transactions/${id}`, txData)
+    await loadData()
+  } catch (error: any) {
+    alert(error.response?.data?.detail || 'Error al actualizar el ingreso')
+  }
+}
+
+const deleteIncome = async (id: number) => {
+  try {
+    await api.delete(`/transactions/${id}`)
+    await loadData()
+  } catch (error: any) {
+    alert(error.response?.data?.detail || 'Error al eliminar el ingreso')
+  }
+}
+
+onMounted(() => { loadData() })
 </script>
 
 <template>
   <div class="dashboard">
-    <!-- Header -->
-    <header class="dashboard-header">
-      <div>
-        <h1>Analytics</h1>
-        <p class="subtitle">Visión general y detallada de tus finanzas</p>
+    <!-- HEADER -->
+    <header class="top-bar">
+      <div class="month-selector">
+        <button @click="changeMonth(-1)" class="btn-nav">‹</button>
+        <h2>{{ formattedMonthName }}</h2>
+        <button @click="changeMonth(1)" class="btn-nav">›</button>
       </div>
-      <button class="btn-primary">+ Nuevo Movimiento</button>
+
+      <nav class="tabs-nav">
+        <button :class="['tab-btn', { active: activeTab === 'resumen' }]" @click="activeTab = 'resumen'">📊 Presupuesto Global</button>
+        <button :class="['tab-btn', { active: activeTab === 'fijos' }]" @click="activeTab = 'fijos'">📌 Gastos Fijos</button>
+        <button :class="['tab-btn', { active: activeTab === 'semanal' }]" @click="activeTab = 'semanal'">📅 Control Semanal</button>
+        <button :class="['tab-btn', { active: activeTab === 'extras' }]" @click="activeTab = 'extras'">🛒 Extras y Compras</button>
+        <button :class="['tab-btn', { active: activeTab === 'ahorros' }]" @click="activeTab = 'ahorros'">💰 Ahorros</button>
+      </nav>
+
+      <div class="top-actions">
+        <button @click="clonePreviousMonth" class="btn-secondary">📋 Copiar Mes Anterior</button>
+      </div>
     </header>
 
-    <!-- KPI Summary Cards (Estilo FinSet) -->
-    <div class="kpi-grid">
-      <!-- Total Balance -->
-      <div class="card kpi-card">
-        <div class="kpi-header">
-          <span>Balance Total</span>
-          <span class="currency-tag">EUR</span>
-        </div>
-        <div class="kpi-amount">{{ totalBalance.toFixed(2) }} €</div>
-        <div class="kpi-footer">
-          <span class="badge success">↑ 12%</span>
-          <span class="kpi-subtext">{{ transactions.length }} transacciones</span>
-        </div>
-      </div>
+    <!-- VISTAS / PESTAÑAS -->
+    <WeeklyControlTab
+        v-if="activeTab === 'semanal'"
+        :weekly-expenses="weeklyExpenses"
+        :month-code="currentMonth"
+        @toggle-status="toggleWeeklyStatus"
+        @update-amount="updateWeeklyAmount"
+        @refresh="loadData"
+    />
 
-      <!-- Income -->
-      <div class="card kpi-card">
-        <div class="kpi-header">
-          <span>Ingresos</span>
-          <span class="currency-tag">EUR</span>
-        </div>
-        <div class="kpi-amount">{{ totalIncome.toFixed(2) }} €</div>
-        <div class="kpi-footer">
-          <span class="badge success">↑ Ingresos del mes</span>
-        </div>
-      </div>
+    <GlobalBudgetTab
+        v-if="activeTab === 'resumen'"
+        :summary="summary"
+        :transactions="transactions"
+        :categories="categories"
+        :formatted-month-name="formattedMonthName"
+        :fixed-expenses="fixedExpenses"
+        :weekly-expenses="weeklyExpenses"
+        :extra-expenses="extraExpenses"
+        :savings-sources="savingsSources"
+        :month-code="currentMonth"
+        @save-budget-item="saveBudgetItem"
+        @create-transaction="createTransaction"
+        @update-income="updateIncome"
+        @delete-income="deleteIncome"
+        @show-fixed-expenses="activeTab = 'fijos'"
+        @show-weekly-control="activeTab = 'semanal'"
+        @show-extra-expenses="activeTab = 'extras'"
+        @show-savings="activeTab = 'ahorros'"
+    />
 
-      <!-- Expense -->
-      <div class="card kpi-card">
-        <div class="kpi-header">
-          <span>Gastos Totales</span>
-          <span class="currency-tag">EUR</span>
-        </div>
-        <div class="kpi-amount">{{ totalExpenses.toFixed(2) }} €</div>
-        <div class="kpi-footer">
-          <span class="badge danger">↓ Gastos acumulados</span>
-        </div>
-      </div>
-    </div>
+    <FixedExpensesPanel
+        v-if="activeTab === 'fijos'"
+        :fixed-expenses="fixedExpenses"
+        :month-code="currentMonth"
+        @refresh="loadData"
+    />
 
-    <!-- Contenido Principal: Formulario e Historial -->
-    <div class="content-grid">
-      <!-- Formulario Nuevo Movimiento -->
-      <div class="card">
-        <h3>Registrar Movimiento</h3>
-        <form @submit.prevent="createTransaction" class="form-stack">
-          <div class="form-group">
-            <label>Usuario</label>
-            <select v-model="newTransaction.user_id" class="input" required>
-              <option v-for="u in users" :key="u.id" :value="u.id">{{ u.name }} ({{ u.role }})</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label>Concepto</label>
-            <input v-model="newTransaction.concept" class="input" placeholder="Ej. Compra supermercado" required />
-          </div>
-
-          <div class="form-group">
-            <label>Importe (€)</label>
-            <input v-model.number="newTransaction.amount" type="number" step="0.01" class="input" required />
-          </div>
-
-          <div class="form-group">
-            <label>Tipo</label>
-            <select v-model="newTransaction.type" class="input">
-              <option value="ingreso">Ingreso</option>
-              <option value="gasto_fijo">Gasto Fijo</option>
-              <option value="gasto_semanal">Gasto Semanal</option>
-              <option value="gasto_extra">Gasto Extra</option>
-            </select>
-          </div>
-
-          <button type="submit" class="btn-primary width-full">Añadir</button>
-        </form>
-      </div>
-
-      <!-- Historial de Transacciones -->
-      <div class="card">
-        <h3>Historial Reciente</h3>
-        <table class="clean-table">
-          <thead>
-          <tr>
-            <th>Concepto</th>
-            <th>Tipo</th>
-            <th>Importe</th>
-          </tr>
-          </thead>
-          <tbody>
-          <tr v-for="t in transactions" :key="t.id">
-            <td><strong>{{ t.concept }}</strong></td>
-            <td><span class="type-pill">{{ t.type }}</span></td>
-            <td :class="t.type === 'ingreso' ? 'text-success' : 'text-danger'">
-              {{ t.type === 'ingreso' ? '+' : '-' }}{{ t.amount.toFixed(2) }} €
-            </td>
-          </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+    <ExtrasTab v-if="activeTab === 'extras'" :month-code="currentMonth" @refresh="loadData" />
+    <SavingsTab v-if="activeTab === 'ahorros'" @refresh="loadData" />
   </div>
 </template>
 
 <style scoped>
-.dashboard { padding: 30px; }
-.dashboard-header {
+.dashboard {
+  padding: 32px;
+  background-color: var(--bg-app);
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+.top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 25px;
-}
-.dashboard-header h1 { margin: 0; font-size: 1.8rem; font-weight: 700; }
-.subtitle { margin: 5px 0 0 0; color: var(--text-muted); font-size: 0.9rem; }
-
-/* Grid de tarjetas KPI */
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
 }
 
-.card {
+.month-selector {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.month-selector h2 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--text-main);
+  min-width: 180px;
+  text-align: center;
+}
+
+.btn-nav {
   background: white;
-  padding: 24px;
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-soft);
+  border: 1.5px solid var(--border-color);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-secondary {
+  background: white;
   border: 1px solid var(--border-color);
-}
-
-.kpi-header { display: flex; justify-content: space-between; color: var(--text-muted); font-weight: 500; }
-.currency-tag { background: #f1f5f9; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem; }
-.kpi-amount { font-size: 2rem; font-weight: 800; margin: 15px 0; color: var(--text-main); }
-.kpi-footer { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; }
-
-/* Badges */
-.badge { padding: 4px 10px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; }
-.badge.success { background: var(--success-bg); color: var(--success-text); }
-.badge.danger { background: var(--danger-bg); color: var(--danger-text); }
-
-/* Layout de Contenido */
-.content-grid {
-  display: grid;
-  grid-template-columns: 320px 1fr;
-  gap: 20px;
-}
-
-.form-stack { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; }
-.form-group { display: flex; flex-direction: column; gap: 5px; }
-.form-group label { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
-.input {
-  padding: 10px 14px;
-  border: 1px solid var(--border-color);
-  border-radius: 10px;
-  background: #f8fafc;
-}
-
-.btn-primary {
-  background: var(--primary);
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  border-radius: var(--radius-pill);
+  padding: 10px 18px;
+  border-radius: 20px;
   font-weight: 600;
   cursor: pointer;
 }
-.btn-primary:hover { background: var(--primary-hover); }
-.width-full { width: 100%; }
 
-/* Tablas limpias */
-.clean-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-.clean-table th { text-align: left; padding: 12px; color: var(--text-muted); border-bottom: 1px solid var(--border-color); }
-.clean-table td { padding: 14px 12px; border-bottom: 1px solid var(--border-color); }
-.type-pill { background: #f1f5f9; padding: 4px 10px; border-radius: 8px; font-size: 0.8rem; text-transform: capitalize; }
-.text-success { color: var(--success-text); font-weight: 700; }
-.text-danger { color: var(--danger-text); font-weight: 700; }
+.tabs-nav {
+  display: flex;
+  gap: 8px;
+  background: white;
+  padding: 6px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  padding: 8px 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s;
+}
+
+.tab-btn.active {
+  background: var(--primary, #3b82f6);
+  color: white;
+}
 </style>
