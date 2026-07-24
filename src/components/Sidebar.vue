@@ -48,7 +48,8 @@ const logout = () => {
 <style scoped>
 .sidebar {
   width: 240px;
-  height: 100vh;
+  height: 100%;
+  flex: 0 0 240px;
   background: white;
   padding: 24px;
   display: flex;

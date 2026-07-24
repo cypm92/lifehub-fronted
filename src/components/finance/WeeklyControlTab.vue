@@ -117,7 +117,7 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 
 <template>
   <div>
-    <div class="weekly-actions"><div><h3>Configuración semanal</h3><span>Define categorías e importe para cada semana.</span></div><button class="btn-manage" @click="openManager">Gestionar categorías</button></div>
+    <div class="weekly-actions"><div><h3>Configuración semanal</h3><span>Define categorías e importe para cada semana.</span></div><button class="btn-manage" @click="openManager">+ Añadir gasto</button></div>
     <!-- Si hay semanas, mostramos el grid -->
     <div v-if="weeklyExpenses && weeklyExpenses.length > 0" class="weeks-grid">
       <div v-for="(items, weekNum) in groupedWeeks" :key="weekNum" class="card week-card">

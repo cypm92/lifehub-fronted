@@ -178,7 +178,7 @@ const removeGroup = async (group: FixedExpenseGroup) => {
         <h3>Gastos Fijos</h3>
         <span class="subtitle-sm">Pagos recurrentes de {{ monthCode }}</span>
       </div>
-      <div class="header-actions"><button class="btn-secondary btn-sm" @click="isGroupManagerOpen = true; loadGroups()">Categorías</button><button class="btn-primary btn-sm" @click="openCreate">+ Gestionar gastos</button></div>
+      <div class="header-actions"><button class="btn-secondary btn-sm" @click="isGroupManagerOpen = true; loadGroups()">Gestionar categorías</button><button class="btn-primary btn-sm" @click="openCreate">+ Añadir gasto</button></div>
     </div>
 
     <div class="fixed-expenses-metrics">

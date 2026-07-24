@@ -467,7 +467,7 @@ const getProgressClass = (pct: number) => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 20px;
-  margin-bottom: 28px;
+  margin-bottom: 16px;
 }
 
 .kpi-header {
@@ -491,6 +491,9 @@ const getProgressClass = (pct: number) => {
 }
 
 .kpi-card:nth-child(2) { order: 4; }
+.kpi-card { padding-top: 15px; padding-bottom: 15px; }
+.kpi-card .kpi-amount { margin-top: 8px; margin-bottom: 8px; }
+.kpi-card .balance-projection { margin-top: 8px; padding-top: 6px; }
 .kpi-card:nth-child(3) { order: 2; }
 .kpi-card:nth-child(4) { order: 3; }
 
@@ -638,6 +641,10 @@ const getProgressClass = (pct: number) => {
 .fixed-expenses-card {
   margin-bottom: 28px;
 }
+
+:deep(.fixed-summary), :deep(.weekly-summary), :deep(.extras-summary) { margin-bottom: 16px; }
+:deep(.summary-header) { margin-bottom: 10px; }
+:deep(.summary-metrics div), :deep(.metrics div) { padding: 9px; }
 
 .fixed-expenses-header {
   display: flex;

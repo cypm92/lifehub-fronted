@@ -16,13 +16,18 @@ const route = useRoute()
 </template>
 
 <style>
+html, body, #app {
+  height: 100%;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   background-color: #f4f6f8;
 }
 
-.layout { display: flex; min-height: 100vh; }
-.main-content { flex: 1; padding: 30px; overflow-y: auto; }
+.layout { display: flex; height: 100vh; overflow: hidden; }
+.main-content { flex: 1; min-width: 0; overflow-y: auto; }
 .full-content { flex: 1; width: 100%; }
 </style>

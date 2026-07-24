@@ -332,9 +332,9 @@ onMounted(() => { loadData() })
 
 <style scoped>
 .dashboard {
-  padding: 32px;
+  padding: 16px 32px 20px;
   background-color: var(--bg-app);
-  min-height: 100vh;
+  min-height: 100%;
   box-sizing: border-box;
 }
 
@@ -342,7 +342,7 @@ onMounted(() => { loadData() })
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   flex-wrap: wrap;
   gap: 16px;
 }
