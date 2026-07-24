@@ -122,10 +122,16 @@ const totalPlannedRecurring = computed(() => fixedPlanned.value + weeklyPlanned.
 const extraPaid = computed(() => props.extraExpenses
   .filter(expense => expense.status === 'Pagado')
   .reduce((total, expense) => total + expense.amount, 0))
+const extraPlanned = computed(() => props.extraExpenses.reduce((total, expense) => total + expense.amount, 0))
 const totalPaidRecurring = computed(() => fixedPaid.value + weeklyPaid.value + extraPaid.value)
 const availableIncome = computed(() => props.summary?.actual_income || props.summary?.expected_income || 0)
 const projectedSavings = computed(() => availableIncome.value - totalPlannedRecurring.value)
 const remainingThisMonth = computed(() => availableIncome.value - totalPaidRecurring.value)
+const fixedPending = computed(() => fixedPlanned.value - fixedPaid.value)
+const weeklyPending = computed(() => weeklyPlanned.value - weeklyPaid.value)
+const extraPending = computed(() => extraPlanned.value - extraPaid.value)
+const pendingPayments = computed(() => fixedPending.value + weeklyPending.value + extraPending.value)
+const projectedMonthEndBalance = computed(() => remainingThisMonth.value - pendingPayments.value)
 const incomeTransactions = computed(() => props.transactions.filter(transaction => transaction.type === 'ingreso'))
 const savingsTotal = computed(() => props.savingsSources.reduce((total, source) => total + source.balance, 0))
 const newTransaction = ref({
@@ -257,31 +263,36 @@ const getProgressClass = (pct: number) => {
 
       <div class="card kpi-card">
         <div class="kpi-header">
-          <span>Gastos Planeados</span>
+          <span>Gastos mes actual</span>
           <span class="currency-tag">EUR</span>
         </div>
-        <div class="kpi-amount">
-          {{ totalPlannedRecurring.toFixed(2) }} €
+        <div class="budget-total"><div class="kpi-amount" :class="totalPaidRecurring > totalPlannedRecurring ? 'text-danger' : 'text-success'">{{ totalPaidRecurring.toFixed(2) }} €</div><span class="kpi-subtext">Pagado actualmente</span></div>
+        <div class="kpi-breakdown planned-breakdown">
+          <div><span>Fijos presupuestados</span><strong>{{ fixedPlanned.toFixed(2) }} €</strong></div>
+          <div><span>Semanales presupuestados</span><strong>{{ weeklyPlanned.toFixed(2) }} €</strong></div>
+          <div><span>Extras presupuestados</span><strong>{{ extraPlanned.toFixed(2) }} €</strong></div>
         </div>
         <div class="kpi-breakdown">
-          <div><span>Fijos</span><strong>{{ fixedPlanned.toFixed(2) }} €</strong></div>
-          <div><span>Semanales</span><strong>{{ weeklyPlanned.toFixed(2) }} €</strong></div>
-          <div><span>Pagado real</span><strong :class="totalPaidRecurring > totalPlannedRecurring ? 'text-danger' : 'text-success'">{{ totalPaidRecurring.toFixed(2) }} €</strong></div>
+          <div><span>Fijos pagados</span><strong>{{ fixedPaid.toFixed(2) }} €</strong></div>
+          <div><span>Semanales pagados</span><strong>{{ weeklyPaid.toFixed(2) }} €</strong></div>
+          <div><span>Extras pagados</span><strong>{{ extraPaid.toFixed(2) }} €</strong></div>
         </div>
       </div>
 
       <div class="card kpi-card">
         <div class="kpi-header">
-          <span>Capacidad Ahorro Proyectada</span>
+          <span>Saldo Disponible</span>
         </div>
-        <div class="kpi-amount" :class="projectedSavings >= 0 ? 'text-success' : 'text-danger'">
-          {{ projectedSavings.toFixed(2) }} €
+        <div class="kpi-amount" :class="remainingThisMonth >= 0 ? 'text-success' : 'text-danger'">
+          {{ remainingThisMonth.toFixed(2) }} €
         </div>
         <div class="kpi-breakdown">
-          <div><span>Ingresos registrados</span><strong>{{ availableIncome.toFixed(2) }} €</strong></div>
-          <div><span>Comprometido este mes</span><strong>{{ totalPlannedRecurring.toFixed(2) }} €</strong></div>
-          <div><span>Disponible actualmente</span><strong :class="remainingThisMonth >= 0 ? 'text-success' : 'text-danger'">{{ remainingThisMonth.toFixed(2) }} €</strong></div>
+          <div><span>Ingresos</span><strong>{{ availableIncome.toFixed(2) }} €</strong></div>
+          <div><span>Pagado</span><strong>{{ totalPaidRecurring.toFixed(2) }} €</strong></div>
+          <div><span>Pendiente</span><strong :class="pendingPayments > 0 ? 'text-warning' : 'text-success'">{{ pendingPayments.toFixed(2) }} €</strong></div>
         </div>
+        <div class="pending-detail">Pendiente: Fijos {{ fixedPending.toFixed(2) }} € · Semanales {{ weeklyPending.toFixed(2) }} € · Extras {{ extraPending.toFixed(2) }} €</div>
+        <div class="balance-projection"><span>Saldo al cerrar el mes</span><strong :class="projectedMonthEndBalance >= 0 ? 'text-success' : 'text-danger'">{{ projectedMonthEndBalance.toFixed(2) }} €</strong></div>
       </div>
     </div>
 
@@ -485,7 +496,7 @@ const getProgressClass = (pct: number) => {
 
 .kpi-breakdown {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 6px;
   margin-top: 8px;
 }
@@ -493,6 +504,14 @@ const getProgressClass = (pct: number) => {
 .kpi-breakdown div { display: flex; flex-direction: column; gap: 2px; }
 .kpi-breakdown span { color: var(--text-muted); font-size: 0.72rem; }
 .kpi-breakdown strong { font-size: 0.82rem; }
+.planned-breakdown { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border-color); }
+
+.budget-total { display: flex; align-items: baseline; gap: 8px; }
+.budget-total .kpi-amount { margin: 12px 0; }
+
+.balance-projection { display:flex; justify-content:space-between; margin-top:12px; padding-top:8px; border-top:1px solid var(--border-color); font-size:.78rem; }
+.balance-projection span { color:var(--text-muted); }
+.pending-detail { margin-top:9px; color:var(--text-muted); font-size:.72rem; line-height:1.35; }
 
 .btn-income {
   margin-top: 12px;
