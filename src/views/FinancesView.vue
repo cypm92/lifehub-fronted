@@ -236,7 +236,7 @@ const clonePreviousMonth = async () => {
 
 const createTransaction = async (txData: any) => {
   try {
-    await api.post('/transactions', { ...txData, month_code: currentMonth.value, user_id: users.value[0]?.id || null })
+    await api.post('/transactions', { ...txData, month_code: currentMonth.value })
     await loadData()
   } catch (error: any) {
     alert(error.response?.data?.detail || 'Error al registrar el movimiento')

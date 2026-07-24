@@ -4,6 +4,7 @@ import VehiclesView from '../views/VehiclesView.vue'
 import CalendarView from '../views/CalendarView.vue'
 import VaultView from '../views/VaultView.vue'
 import LoginView from '../views/LoginView.vue'
+import SettingsView from '../views/SettingsView.vue'
 
 const routes = [
     { path: '/login', name: 'Login', component: LoginView },
@@ -12,6 +13,7 @@ const routes = [
     { path: '/vehicles', name: 'Vehicles', component: VehiclesView },
     { path: '/calendar', name: 'Calendar', component: CalendarView },
     { path: '/vault', name: 'Vault', component: VaultView },
+    { path: '/settings', name: 'Settings', component: SettingsView },
 ]
 
 const router = createRouter({

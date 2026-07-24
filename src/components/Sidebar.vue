@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
 const route = useRoute()
+const user = computed(() => JSON.parse(localStorage.getItem('user') || '{}'))
 
 const logout = () => {
   localStorage.removeItem('token')
@@ -13,16 +15,15 @@ const logout = () => {
 
 <template>
   <aside class="sidebar">
-    <!-- Logo -->
-    <div class="brand">
-      <div class="brand-logo">F</div>
-      <span class="brand-name">LifeHub</span>
-    </div>
+    <router-link to="/settings" class="brand" :class="{ active: route.path === '/settings' }">
+      <div class="brand-logo">⚙</div>
+      <div><span class="brand-name">{{ user.name || 'Configuración' }}</span><small>{{ user.email || 'Gestionar perfil' }}</small></div>
+    </router-link>
 
     <!-- Menú de Navegación -->
     <nav class="nav-menu">
       <router-link to="/finances" class="nav-item" :class="{ active: route.path === '/finances' }">
-        <span class="icon">📊</span> Analytics
+        <span class="icon">📊</span> Finanzas
       </router-link>
       <router-link to="/vehicles" class="nav-item" :class="{ active: route.path === '/vehicles' }">
         <span class="icon">🚗</span> Vehículos
@@ -61,6 +62,8 @@ const logout = () => {
   align-items: center;
   gap: 12px;
   margin-bottom: 36px;
+  color: var(--text-main);
+  text-decoration: none;
 }
 
 .brand-logo {
@@ -69,7 +72,7 @@ const logout = () => {
   background: black;
   color: white;
   font-weight: 800;
-  font-size: 1.2rem;
+  font-size: 1.35rem;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -77,9 +80,12 @@ const logout = () => {
 }
 
 .brand-name {
+  display: block;
   font-weight: 700;
   font-size: 1.25rem;
 }
+
+.brand small { display:block; max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.72rem; }
 
 .nav-menu {
   display: flex;
