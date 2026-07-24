@@ -9,25 +9,40 @@ const route = useRoute()
   <div class="layout">
     <!-- Solo muestra el Sidebar si no estamos en la vista de Login -->
     <Sidebar v-if="route.name !== 'Login'" />
-    <main :class="{ 'main-content': route.name !== 'Login', 'full-content': route.name === 'Login' }">
+    <main
+      :class="{ 'main-content': route.name !== 'Login', 'full-content': route.name === 'Login' }"
+    >
       <RouterView />
     </main>
   </div>
 </template>
 
 <style>
-html, body, #app {
+html,
+body,
+#app {
   height: 100%;
   overflow: hidden;
 }
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background-color: #f4f6f8;
 }
 
-.layout { display: flex; height: 100vh; overflow: hidden; }
-.main-content { flex: 1; min-width: 0; overflow-y: auto; }
-.full-content { flex: 1; width: 100%; }
+.layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+.main-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+.full-content {
+  flex: 1;
+  width: 100%;
+}
 </style>

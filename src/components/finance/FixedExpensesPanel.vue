@@ -38,29 +38,42 @@ const isGroupManagerOpen = ref(false)
 const editingId = ref<number | null>(null)
 const isInstallmentExpense = ref(false)
 const form = ref({
-  concept: '', amount: 0, description: '', due_day: 1,
-  end_date: '', installments_total: null as number | null, installments_paid: 0,
+  concept: '',
+  amount: 0,
+  description: '',
+  due_day: 1,
+  end_date: '',
+  installments_total: null as number | null,
+  installments_paid: 0,
   group_id: null as number | null,
 })
 const groups = ref<FixedExpenseGroup[]>([])
 const editingGroupId = ref<number | null>(null)
 const groupForm = ref({ name: '', color: '#7c3aed' })
 
-const planned = computed(() => props.fixedExpenses.reduce((total, expense) => total + expense.amount, 0))
-const paid = computed(() => props.fixedExpenses
-  .filter(expense => expense.status === 'Pagado')
-  .reduce((total, expense) => total + expense.amount, 0))
+const planned = computed(() =>
+  props.fixedExpenses.reduce((total, expense) => total + expense.amount, 0)
+)
+const paid = computed(() =>
+  props.fixedExpenses
+    .filter((expense) => expense.status === 'Pagado')
+    .reduce((total, expense) => total + expense.amount, 0)
+)
 const pending = computed(() => planned.value - paid.value)
 const groupedExpenses = computed(() => {
-  const buckets = new Map<string, { id: number | null, name: string, color: string, expenses: FixedExpense[] }>()
+  const buckets = new Map<
+    string,
+    { id: number | null; name: string; color: string; expenses: FixedExpense[] }
+  >()
   props.fixedExpenses.forEach((expense) => {
     const key = expense.group_id?.toString() ?? 'none'
-    if (!buckets.has(key)) buckets.set(key, {
-      id: expense.group_id ?? null,
-      name: expense.group_name || 'Sin categoría',
-      color: expense.group_color || '#94a3b8',
-      expenses: [],
-    })
+    if (!buckets.has(key))
+      buckets.set(key, {
+        id: expense.group_id ?? null,
+        name: expense.group_name || 'Sin categoría',
+        color: expense.group_color || '#94a3b8',
+        expenses: [],
+      })
     buckets.get(key)!.expenses.push(expense)
   })
   return [...buckets.values()]
@@ -74,13 +87,27 @@ const loadGroups = async () => {
 const resetForm = () => {
   editingId.value = null
   isInstallmentExpense.value = false
-  form.value = { concept: '', amount: 0, description: '', due_day: 1, end_date: '', installments_total: null, installments_paid: 0, group_id: null }
+  form.value = {
+    concept: '',
+    amount: 0,
+    description: '',
+    due_day: 1,
+    end_date: '',
+    installments_total: null,
+    installments_paid: 0,
+    group_id: null,
+  }
 }
 
 const openCreate = async () => {
   resetForm()
   await loadGroups()
   isManagerOpen.value = true
+}
+
+const openGroupManager = async () => {
+  isGroupManagerOpen.value = true
+  await loadGroups()
 }
 
 const openEdit = async (expense: FixedExpense) => {
@@ -153,7 +180,8 @@ const resetGroupForm = () => {
 
 const saveGroup = async () => {
   try {
-    if (editingGroupId.value) await api.patch(`/fixed-expense-groups/${editingGroupId.value}`, groupForm.value)
+    if (editingGroupId.value)
+      await api.patch(`/fixed-expense-groups/${editingGroupId.value}`, groupForm.value)
     else await api.post('/fixed-expense-groups', groupForm.value)
     await loadGroups()
     resetGroupForm()
@@ -178,103 +206,477 @@ const removeGroup = async (group: FixedExpenseGroup) => {
         <h3>Gastos Fijos</h3>
         <span class="subtitle-sm">Pagos recurrentes de {{ monthCode }}</span>
       </div>
-      <div class="header-actions"><button class="btn-secondary btn-sm" @click="isGroupManagerOpen = true; loadGroups()">Gestionar categorías</button><button class="btn-primary btn-sm" @click="openCreate">+ Añadir gasto</button></div>
+      <div class="header-actions">
+        <button class="btn-secondary btn-sm" @click="openGroupManager">Gestionar categorías</button
+        ><button class="btn-primary btn-sm" @click="openCreate">+ Añadir gasto</button>
+      </div>
     </div>
 
     <div class="fixed-expenses-metrics">
-      <div><span>Previsto</span><strong>{{ planned.toFixed(2) }} €</strong></div>
-      <div><span>Pagado</span><strong class="text-success">{{ paid.toFixed(2) }} €</strong></div>
-      <div><span>Pendiente</span><strong :class="pending ? 'text-danger' : 'text-success'">{{ pending.toFixed(2) }} €</strong></div>
+      <div>
+        <span>Previsto</span><strong>{{ planned.toFixed(2) }} €</strong>
+      </div>
+      <div>
+        <span>Pagado</span><strong class="text-success">{{ paid.toFixed(2) }} €</strong>
+      </div>
+      <div>
+        <span>Pendiente</span
+        ><strong :class="pending ? 'text-danger' : 'text-success'"
+          >{{ pending.toFixed(2) }} €</strong
+        >
+      </div>
     </div>
 
     <div v-if="fixedExpenses.length" class="fixed-expenses-list">
       <section v-for="group in groupedExpenses" :key="group.name" class="expense-group">
-        <div class="group-heading"><span class="group-dot" :style="{ backgroundColor: group.color }"></span><strong>{{ group.name }}</strong><span>{{ group.expenses.reduce((total, expense) => total + expense.amount, 0).toFixed(2) }} €</span></div>
+        <div class="group-heading">
+          <span class="group-dot" :style="{ backgroundColor: group.color }"></span
+          ><strong>{{ group.name }}</strong
+          ><span
+            >{{
+              group.expenses.reduce((total, expense) => total + expense.amount, 0).toFixed(2)
+            }}
+            €</span
+          >
+        </div>
         <div v-for="expense in group.expenses" :key="expense.id" class="fixed-expense-row">
-        <button class="status-button" :class="expense.status.toLowerCase()" @click="toggleStatus(expense)">
-          {{ expense.status === 'Pagado' ? '✓ Pagado' : 'Pendiente' }}
-        </button>
-        <div>
-          <strong>{{ expense.concept }}</strong>
-          <span v-if="expense.description" class="expense-description">{{ expense.description }}</span>
-          <span v-if="expense.installments_total" class="installment-progress">
-            Cuotas: {{ expense.installments_paid }}/{{ expense.installments_total }} pagadas · {{ expense.installments_pending }} pendientes ({{ expense.installments_percentage }}%)
-          </span>
-        </div>
-        <span class="expense-date">Día {{ expense.due_day }} · {{ expense.due_date }}<br v-if="expense.end_date" />{{ expense.end_date ? `Fin: ${expense.end_date}` : '' }}</span>
-        <strong>{{ expense.amount.toFixed(2) }} €</strong>
-        <div class="row-actions">
-          <button class="btn-link" @click="openEdit(expense)">Editar</button>
-          <button class="btn-link danger" @click="remove(expense)">Eliminar</button>
-        </div>
+          <button
+            class="status-button"
+            :class="expense.status.toLowerCase()"
+            @click="toggleStatus(expense)"
+          >
+            {{ expense.status === 'Pagado' ? '✓ Pagado' : 'Pendiente' }}
+          </button>
+          <div>
+            <strong>{{ expense.concept }}</strong>
+            <span v-if="expense.description" class="expense-description">{{
+              expense.description
+            }}</span>
+            <span v-if="expense.installments_total" class="installment-progress">
+              Cuotas: {{ expense.installments_paid }}/{{ expense.installments_total }} pagadas ·
+              {{ expense.installments_pending }} pendientes ({{ expense.installments_percentage }}%)
+            </span>
+          </div>
+          <span class="expense-date"
+            >Día {{ expense.due_day }} · {{ expense.due_date }}<br v-if="expense.end_date" />{{
+              expense.end_date ? `Fin: ${expense.end_date}` : ''
+            }}</span
+          >
+          <strong>{{ expense.amount.toFixed(2) }} €</strong>
+          <div class="row-actions">
+            <button class="btn-link" @click="openEdit(expense)">Editar</button>
+            <button class="btn-link danger" @click="remove(expense)">Eliminar</button>
+          </div>
         </div>
       </section>
-      </div>
-    <p v-else class="fixed-empty-state">Configura tus créditos, suscripciones y otros cargos recurrentes para crear automáticamente el presupuesto de cada mes.</p>
+    </div>
+    <p v-else class="fixed-empty-state">
+      Configura tus créditos, suscripciones y otros cargos recurrentes para crear automáticamente el
+      presupuesto de cada mes.
+    </p>
   </section>
 
   <div v-if="isManagerOpen" class="modal-backdrop" @click.self="isManagerOpen = false">
     <form class="modal" @submit.prevent="save">
       <div class="modal-header">
-        <div><h3>{{ editingId ? 'Editar gasto fijo' : 'Nuevo gasto fijo' }}</h3><p>Se generará cada mes y aparecerá como próximo evento de pago.</p></div>
+        <div>
+          <h3>{{ editingId ? 'Editar gasto fijo' : 'Nuevo gasto fijo' }}</h3>
+          <p>Se generará cada mes y aparecerá como próximo evento de pago.</p>
+        </div>
         <button type="button" class="btn-close" @click="isManagerOpen = false">×</button>
       </div>
-      <label>Concepto<input v-model.trim="form.concept" required maxlength="120" placeholder="Ej.: Crédito Revolut" /></label>
-      <label>Categoría
-        <select v-model.number="form.group_id"><option :value="null">Sin categoría</option><option v-for="group in groups" :key="group.id" :value="group.id">{{ group.name }}</option></select>
+      <label
+        >Concepto<input
+          v-model.trim="form.concept"
+          required
+          maxlength="120"
+          placeholder="Ej.: Crédito Revolut"
+      /></label>
+      <label
+        >Categoría
+        <select v-model.number="form.group_id">
+          <option :value="null">Sin categoría</option>
+          <option v-for="group in groups" :key="group.id" :value="group.id">
+            {{ group.name }}
+          </option>
+        </select>
       </label>
       <div class="form-row">
-        <label>Importe (€)<input v-model.number="form.amount" required min="0.01" step="0.01" type="number" /></label>
-        <label>Día de cobro<input v-model.number="form.due_day" required min="1" max="31" type="number" /></label>
+        <label
+          >Importe (€)<input
+            v-model.number="form.amount"
+            required
+            min="0.01"
+            step="0.01"
+            type="number"
+        /></label>
+        <label
+          >Día de cobro<input v-model.number="form.due_day" required min="1" max="31" type="number"
+        /></label>
       </div>
-      <label class="checkbox-label"><input v-model="isInstallmentExpense" type="checkbox" /> Es un crédito o gasto por cuotas</label>
+      <label class="checkbox-label"
+        ><input v-model="isInstallmentExpense" type="checkbox" /> Es un crédito o gasto por
+        cuotas</label
+      >
       <div v-if="isInstallmentExpense" class="installments-form">
         <div class="form-row">
-          <label>Cuotas totales<input v-model.number="form.installments_total" required min="1" type="number" /></label>
-          <label>Cuotas ya pagadas<input v-model.number="form.installments_paid" required min="0" :max="form.installments_total || undefined" type="number" /></label>
+          <label
+            >Cuotas totales<input
+              v-model.number="form.installments_total"
+              required
+              min="1"
+              type="number"
+          /></label>
+          <label
+            >Cuotas ya pagadas<input
+              v-model.number="form.installments_paid"
+              required
+              min="0"
+              :max="form.installments_total || undefined"
+              type="number"
+          /></label>
         </div>
         <label>Fecha prevista de fin (opcional)<input v-model="form.end_date" type="date" /></label>
       </div>
-      <label>Descripción (opcional)<textarea v-model.trim="form.description" maxlength="500" placeholder="Ej.: Domiciliado el día 5"></textarea></label>
-      <div class="modal-actions"><button type="button" class="btn-secondary" @click="isManagerOpen = false">Cancelar</button><button class="btn-primary" type="submit">Guardar</button></div>
+      <label
+        >Descripción (opcional)<textarea
+          v-model.trim="form.description"
+          maxlength="500"
+          placeholder="Ej.: Domiciliado el día 5"
+        ></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn-secondary" @click="isManagerOpen = false">Cancelar</button
+        ><button class="btn-primary" type="submit">Guardar</button>
+      </div>
     </form>
   </div>
 
   <div v-if="isGroupManagerOpen" class="modal-backdrop" @click.self="isGroupManagerOpen = false">
     <form class="modal group-modal" @submit.prevent="saveGroup">
-      <div class="modal-header"><div><h3>Categorías de gastos fijos</h3><p>Organiza tus créditos, suscripciones y cualquier otro grupo.</p></div><button type="button" class="btn-close" @click="isGroupManagerOpen = false">×</button></div>
-      <div v-if="groups.length" class="groups-list"><div v-for="group in groups" :key="group.id" class="group-manager-row"><span class="group-dot" :style="{ backgroundColor: group.color }"></span><strong>{{ group.name }}</strong><button type="button" class="btn-link" @click="editGroup(group)">Editar</button><button type="button" class="btn-link danger" @click="removeGroup(group)">Eliminar</button></div></div>
-      <label>Nombre de la categoría<input v-model.trim="groupForm.name" required maxlength="60" placeholder="Ej.: Créditos" /></label>
-      <label>Color<input v-model="groupForm.color" class="color-input" required type="color" /></label>
-      <div class="modal-actions"><button v-if="editingGroupId" type="button" class="btn-secondary" @click="resetGroupForm">Cancelar edición</button><button class="btn-primary" type="submit">{{ editingGroupId ? 'Guardar categoría' : 'Crear categoría' }}</button></div>
+      <div class="modal-header">
+        <div>
+          <h3>Categorías de gastos fijos</h3>
+          <p>Organiza tus créditos, suscripciones y cualquier otro grupo.</p>
+        </div>
+        <button type="button" class="btn-close" @click="isGroupManagerOpen = false">×</button>
+      </div>
+      <div v-if="groups.length" class="groups-list">
+        <div v-for="group in groups" :key="group.id" class="group-manager-row">
+          <span class="group-dot" :style="{ backgroundColor: group.color }"></span
+          ><strong>{{ group.name }}</strong
+          ><button type="button" class="btn-link" @click="editGroup(group)">Editar</button
+          ><button type="button" class="btn-link danger" @click="removeGroup(group)">
+            Eliminar
+          </button>
+        </div>
+      </div>
+      <label
+        >Nombre de la categoría<input
+          v-model.trim="groupForm.name"
+          required
+          maxlength="60"
+          placeholder="Ej.: Créditos"
+      /></label>
+      <label
+        >Color<input v-model="groupForm.color" class="color-input" required type="color"
+      /></label>
+      <div class="modal-actions">
+        <button v-if="editingGroupId" type="button" class="btn-secondary" @click="resetGroupForm">
+          Cancelar edición</button
+        ><button class="btn-primary" type="submit">
+          {{ editingGroupId ? 'Guardar categoría' : 'Crear categoría' }}
+        </button>
+      </div>
     </form>
   </div>
 </template>
 
 <style scoped>
-.fixed-expenses-card { margin-bottom: 28px; }
-.fixed-expenses-header { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:20px; }
-.header-actions { display:flex; gap:8px; }
-.fixed-expenses-header h3 { margin:0 0 4px; }
-.subtitle-sm, .expense-description, .expense-date, .fixed-empty-state, .modal-header p { color:var(--text-muted); font-size:.86rem; }
-.installment-progress { display:block; margin-top:5px; color:#4f46e5; font-size:.8rem; font-weight:650; }
-.fixed-expenses-metrics { display:grid; grid-template-columns:repeat(3, 1fr); border:1px solid var(--border-color); border-radius:10px; overflow:hidden; }
-.fixed-expenses-metrics div { display:flex; flex-direction:column; gap:4px; padding:14px 18px; border-right:1px solid var(--border-color); }
-.fixed-expenses-metrics div:last-child { border:0; }
-.fixed-expenses-metrics span { color:var(--text-muted); font-size:.82rem; }
-.fixed-expenses-metrics strong { font-size:1.15rem; }
-.fixed-expenses-list { margin-top:16px; border-top:1px solid var(--border-color); }
-.expense-group + .expense-group { margin-top:18px; }
-.group-heading { display:flex; align-items:center; gap:8px; padding:14px 4px 8px; color:var(--text-main); }.group-heading span:last-child { margin-left:auto; color:var(--text-muted); font-size:.88rem; font-weight:650; }.group-dot { display:inline-block; width:10px; height:10px; border-radius:50%; flex:none; }
-.fixed-expense-row { display:grid; grid-template-columns:100px minmax(150px,1fr) minmax(120px,.7fr) auto auto; gap:14px; align-items:center; padding:12px 4px; border-bottom:1px solid var(--border-color); }
-.expense-description { display:block; margin-top:3px; }
-.status-button { border:0; border-radius:999px; padding:6px 9px; cursor:pointer; font-weight:700; font-size:.78rem; }
-.status-button.pagado { color:#166534; background:#dcfce7; }.status-button.esperando { color:#92400e; background:#fef3c7; }
-.row-actions { display:flex; gap:8px; }.btn-link { border:0; background:none; color:var(--primary); cursor:pointer; font-weight:650; }.danger { color:#dc2626; }
-.text-success { color:#16a34a; }.text-danger { color:#dc2626; }.fixed-empty-state { margin:16px 0 0; }
-.modal-backdrop { position:fixed; inset:0; z-index:20; display:grid; place-items:center; padding:20px; background:rgba(15,23,42,.45); }
-.modal { width:min(100%, 520px); display:flex; flex-direction:column; gap:16px; padding:24px; background:white; border-radius:14px; box-shadow:0 20px 50px rgba(15,23,42,.25); }
-.modal-header { display:flex; justify-content:space-between; gap:16px; }.modal-header h3,.modal-header p { margin:0; }.modal-header p { margin-top:4px; }.btn-close { border:0; background:none; font-size:1.8rem; line-height:1; cursor:pointer; }
-label { display:flex; flex-direction:column; gap:6px; font-size:.88rem; font-weight:650; color:var(--text-main); } input,textarea,select { padding:9px 11px; border:1px solid var(--border-color); border-radius:8px; font:inherit; background:white; } textarea { min-height:72px; resize:vertical; }.checkbox-label { flex-direction:row; align-items:center; }.checkbox-label input { width:16px; height:16px; }.installments-form { display:flex; flex-direction:column; gap:12px; padding:14px; background:#f5f3ff; border:1px solid #ddd6fe; border-radius:9px; }.form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }.modal-actions { display:flex; justify-content:flex-end; gap:10px; }.btn-primary,.btn-secondary { border:0; border-radius:8px; padding:9px 14px; cursor:pointer; font-weight:650; }.btn-primary { background:var(--primary); color:white; }.btn-secondary { background:#e2e8f0; color:var(--text-main); }.btn-sm { padding:8px 12px; font-size:.85rem; }.groups-list { border:1px solid var(--border-color); border-radius:9px; overflow:hidden; }.group-manager-row { display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--border-color); }.group-manager-row:last-child { border-bottom:0; }.group-manager-row .btn-link:first-of-type { margin-left:auto; }.color-input { min-height:40px; padding:4px; }
-@media (max-width:760px) { .fixed-expenses-metrics { grid-template-columns:1fr; }.fixed-expenses-metrics div { border-right:0; border-bottom:1px solid var(--border-color); }.fixed-expenses-metrics div:last-child { border-bottom:0; }.fixed-expense-row { grid-template-columns:1fr auto; }.expense-date { grid-column:1 / 2; }.row-actions { justify-self:end; }.form-row { grid-template-columns:1fr; } }
+.fixed-expenses-card {
+  margin-bottom: 28px;
+}
+.fixed-expenses-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 20px;
+}
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+.fixed-expenses-header h3 {
+  margin: 0 0 4px;
+}
+.subtitle-sm,
+.expense-description,
+.expense-date,
+.fixed-empty-state,
+.modal-header p {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+}
+.installment-progress {
+  display: block;
+  margin-top: 5px;
+  color: #4f46e5;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+.fixed-expenses-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.fixed-expenses-metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 18px;
+  border-right: 1px solid var(--border-color);
+}
+.fixed-expenses-metrics div:last-child {
+  border: 0;
+}
+.fixed-expenses-metrics span {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+.fixed-expenses-metrics strong {
+  font-size: 1.15rem;
+}
+.fixed-expenses-list {
+  margin-top: 16px;
+  border-top: 1px solid var(--border-color);
+}
+.expense-group + .expense-group {
+  margin-top: 18px;
+}
+.group-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 4px 8px;
+  color: var(--text-main);
+}
+.group-heading span:last-child {
+  margin-left: auto;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  font-weight: 650;
+}
+.group-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex: none;
+}
+.fixed-expense-row {
+  display: grid;
+  grid-template-columns: 100px minmax(150px, 1fr) minmax(120px, 0.7fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--border-color);
+}
+.expense-description {
+  display: block;
+  margin-top: 3px;
+}
+.status-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 6px 9px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+.status-button.pagado {
+  color: #166534;
+  background: #dcfce7;
+}
+.status-button.esperando {
+  color: #92400e;
+  background: #fef3c7;
+}
+.row-actions {
+  display: flex;
+  gap: 8px;
+}
+.btn-link {
+  border: 0;
+  background: none;
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 650;
+}
+.danger {
+  color: #dc2626;
+}
+.text-success {
+  color: #16a34a;
+}
+.text-danger {
+  color: #dc2626;
+}
+.fixed-empty-state {
+  margin: 16px 0 0;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(15, 23, 42, 0.45);
+}
+.modal {
+  width: min(100%, 520px);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 24px;
+  background: white;
+  border-radius: 14px;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+.modal-header h3,
+.modal-header p {
+  margin: 0;
+}
+.modal-header p {
+  margin-top: 4px;
+}
+.btn-close {
+  border: 0;
+  background: none;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.88rem;
+  font-weight: 650;
+  color: var(--text-main);
+}
+input,
+textarea,
+select {
+  padding: 9px 11px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font: inherit;
+  background: white;
+}
+textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+.checkbox-label {
+  flex-direction: row;
+  align-items: center;
+}
+.checkbox-label input {
+  width: 16px;
+  height: 16px;
+}
+.installments-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  background: #f5f3ff;
+  border: 1px solid #ddd6fe;
+  border-radius: 9px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.btn-primary,
+.btn-secondary {
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-weight: 650;
+}
+.btn-primary {
+  background: var(--primary);
+  color: white;
+}
+.btn-secondary {
+  background: #e2e8f0;
+  color: var(--text-main);
+}
+.btn-sm {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+.groups-list {
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  overflow: hidden;
+}
+.group-manager-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+.group-manager-row:last-child {
+  border-bottom: 0;
+}
+.group-manager-row .btn-link:first-of-type {
+  margin-left: auto;
+}
+.color-input {
+  min-height: 40px;
+  padding: 4px;
+}
+@media (max-width: 760px) {
+  .fixed-expenses-metrics {
+    grid-template-columns: 1fr;
+  }
+  .fixed-expenses-metrics div {
+    border-right: 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  .fixed-expenses-metrics div:last-child {
+    border-bottom: 0;
+  }
+  .fixed-expense-row {
+    grid-template-columns: 1fr auto;
+  }
+  .expense-date {
+    grid-column: 1 / 2;
+  }
+  .row-actions {
+    justify-self: end;
+  }
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

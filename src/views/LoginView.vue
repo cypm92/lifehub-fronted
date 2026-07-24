@@ -21,14 +21,14 @@ const handleSubmit = async () => {
         name: name.value,
         email: email.value,
         password: password.value,
-        role: role.value
+        role: role.value,
       })
     }
 
     // Iniciar Sesión
     const response = await api.post('/auth/login', {
       email: email.value,
-      password: password.value
+      password: password.value,
     })
 
     // Guardar Token y datos del Usuario
@@ -103,13 +103,33 @@ const handleSubmit = async () => {
   text-align: center;
 }
 
-.login-card h2 { color: #2563eb; margin-bottom: 5px; }
-.login-card h3 { margin-bottom: 25px; color: #334155; }
+.login-card h2 {
+  color: #2563eb;
+  margin-bottom: 5px;
+}
+.login-card h3 {
+  margin-bottom: 25px;
+  color: #334155;
+}
 
-.login-form { display: flex; flex-direction: column; gap: 15px; text-align: left; }
-.form-group { display: flex; flex-direction: column; gap: 5px; }
-.form-group label { font-size: 0.9rem; font-weight: 600; color: #475569; }
-.form-group input, .select-input {
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  text-align: left;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #475569;
+}
+.form-group input,
+.select-input {
   padding: 10px;
   border: 1px solid #cbd5e1;
   border-radius: 6px;
@@ -126,7 +146,9 @@ const handleSubmit = async () => {
   font-weight: bold;
   cursor: pointer;
 }
-.btn-primary:hover { background: #1d4ed8; }
+.btn-primary:hover {
+  background: #1d4ed8;
+}
 
 .error-badge {
   background-color: #fee2e2;
@@ -137,6 +159,14 @@ const handleSubmit = async () => {
   margin-bottom: 15px;
 }
 
-.toggle-mode { margin-top: 20px; font-size: 0.9rem; color: #64748b; }
-.toggle-mode a { color: #2563eb; text-decoration: none; font-weight: bold; }
+.toggle-mode {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  color: #64748b;
+}
+.toggle-mode a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: bold;
+}
 </style>

@@ -105,6 +105,7 @@ const summary = ref<MonthlyBudgetSummary | null>(null)
 const weeklyExpenses = ref<WeeklyExpense[]>([])
 const fixedExpenses = ref<FixedExpense[]>([])
 const extraExpenses = ref<ExtraExpense[]>([])
+const futureExtraExpenses = ref<ExtraExpense[]>([])
 const savingsSources = ref<any[]>([])
 
 // --- FECHAS ---
@@ -175,9 +176,9 @@ const loadWeeklyExpenses = async () => {
 
 const toggleWeeklyStatus = async (item: WeeklyExpense) => {
   const nextStatusMap: Record<string, 'Pagado' | 'Parado' | 'Esperando'> = {
-    'Esperando': 'Pagado',
-    'Pagado': 'Parado',
-    'Parado': 'Esperando'
+    Esperando: 'Pagado',
+    Pagado: 'Parado',
+    Parado: 'Esperando',
   }
   const newStatus = nextStatusMap[item.status] || 'Esperando'
 
@@ -191,8 +192,13 @@ const toggleWeeklyStatus = async (item: WeeklyExpense) => {
 
 const loadExtraExpenses = async () => {
   try {
-    const res = await api.get(`/extra-expenses/${currentMonth.value}`)
-    extraExpenses.value = res.data
+    const res = await api.get(`/extra-expenses/${currentMonth.value}?include_scheduled=true`)
+    extraExpenses.value = res.data.filter(
+      (item: ExtraExpense) => item.expense_date.slice(0, 7) === currentMonth.value
+    )
+    futureExtraExpenses.value = res.data.filter(
+      (item: ExtraExpense) => item.expense_date.slice(0, 7) > currentMonth.value
+    )
   } catch (error) {
     console.error('Error cargando gastos extra:', error)
   }
@@ -207,12 +213,17 @@ const updateWeeklyAmount = async (item: WeeklyExpense, allocated_amount: number)
   }
 }
 
-watch(currentMonth, () => { loadData() })
+watch(currentMonth, () => {
+  loadData()
+})
 
 // --- ACCIONES DE PRESUPUESTO ---
 const saveBudgetItem = async (category_id: number, planned_amount: number) => {
   try {
-    await api.post(`/budgets/set-item?month_code=${currentMonth.value}`, { category_id, planned_amount })
+    await api.post(`/budgets/set-item?month_code=${currentMonth.value}`, {
+      category_id,
+      planned_amount,
+    })
     await loadData()
   } catch {
     alert('Error al guardar el límite de la categoría')
@@ -261,7 +272,9 @@ const deleteIncome = async (id: number) => {
   }
 }
 
-onMounted(() => { loadData() })
+onMounted(() => {
+  loadData()
+})
 </script>
 
 <template>
@@ -275,11 +288,36 @@ onMounted(() => { loadData() })
       </div>
 
       <nav class="tabs-nav">
-        <button :class="['tab-btn', { active: activeTab === 'resumen' }]" @click="activeTab = 'resumen'">📊 Presupuesto Global</button>
-        <button :class="['tab-btn', { active: activeTab === 'fijos' }]" @click="activeTab = 'fijos'">📌 Gastos Fijos</button>
-        <button :class="['tab-btn', { active: activeTab === 'semanal' }]" @click="activeTab = 'semanal'">📅 Control Semanal</button>
-        <button :class="['tab-btn', { active: activeTab === 'extras' }]" @click="activeTab = 'extras'">🛒 Extras y Compras</button>
-        <button :class="['tab-btn', { active: activeTab === 'ahorros' }]" @click="activeTab = 'ahorros'">💰 Ahorros</button>
+        <button
+          :class="['tab-btn', { active: activeTab === 'resumen' }]"
+          @click="activeTab = 'resumen'"
+        >
+          📊 Presupuesto Global
+        </button>
+        <button
+          :class="['tab-btn', { active: activeTab === 'fijos' }]"
+          @click="activeTab = 'fijos'"
+        >
+          📌 Gastos Fijos
+        </button>
+        <button
+          :class="['tab-btn', { active: activeTab === 'semanal' }]"
+          @click="activeTab = 'semanal'"
+        >
+          📅 Gastos Semanales
+        </button>
+        <button
+          :class="['tab-btn', { active: activeTab === 'extras' }]"
+          @click="activeTab = 'extras'"
+        >
+          🛒 Otros Gastos
+        </button>
+        <button
+          :class="['tab-btn', { active: activeTab === 'ahorros' }]"
+          @click="activeTab = 'ahorros'"
+        >
+          💰 Ahorros
+        </button>
       </nav>
 
       <div class="top-actions">
@@ -289,40 +327,41 @@ onMounted(() => { loadData() })
 
     <!-- VISTAS / PESTAÑAS -->
     <WeeklyControlTab
-        v-if="activeTab === 'semanal'"
-        :weekly-expenses="weeklyExpenses"
-        :month-code="currentMonth"
-        @toggle-status="toggleWeeklyStatus"
-        @update-amount="updateWeeklyAmount"
-        @refresh="loadData"
+      v-if="activeTab === 'semanal'"
+      :weekly-expenses="weeklyExpenses"
+      :month-code="currentMonth"
+      @toggle-status="toggleWeeklyStatus"
+      @update-amount="updateWeeklyAmount"
+      @refresh="loadData"
     />
 
     <GlobalBudgetTab
-        v-if="activeTab === 'resumen'"
-        :summary="summary"
-        :transactions="transactions"
-        :categories="categories"
-        :formatted-month-name="formattedMonthName"
-        :fixed-expenses="fixedExpenses"
-        :weekly-expenses="weeklyExpenses"
-        :extra-expenses="extraExpenses"
-        :savings-sources="savingsSources"
-        :month-code="currentMonth"
-        @save-budget-item="saveBudgetItem"
-        @create-transaction="createTransaction"
-        @update-income="updateIncome"
-        @delete-income="deleteIncome"
-        @show-fixed-expenses="activeTab = 'fijos'"
-        @show-weekly-control="activeTab = 'semanal'"
-        @show-extra-expenses="activeTab = 'extras'"
-        @show-savings="activeTab = 'ahorros'"
+      v-if="activeTab === 'resumen'"
+      :summary="summary"
+      :transactions="transactions"
+      :categories="categories"
+      :formatted-month-name="formattedMonthName"
+      :fixed-expenses="fixedExpenses"
+      :weekly-expenses="weeklyExpenses"
+      :extra-expenses="extraExpenses"
+      :future-extra-expenses="futureExtraExpenses"
+      :savings-sources="savingsSources"
+      :month-code="currentMonth"
+      @save-budget-item="saveBudgetItem"
+      @create-transaction="createTransaction"
+      @update-income="updateIncome"
+      @delete-income="deleteIncome"
+      @show-fixed-expenses="activeTab = 'fijos'"
+      @show-weekly-control="activeTab = 'semanal'"
+      @show-extra-expenses="activeTab = 'extras'"
+      @show-savings="activeTab = 'ahorros'"
     />
 
     <FixedExpensesPanel
-        v-if="activeTab === 'fijos'"
-        :fixed-expenses="fixedExpenses"
-        :month-code="currentMonth"
-        @refresh="loadData"
+      v-if="activeTab === 'fijos'"
+      :fixed-expenses="fixedExpenses"
+      :month-code="currentMonth"
+      @refresh="loadData"
     />
 
     <ExtrasTab v-if="activeTab === 'extras'" :month-code="currentMonth" @refresh="loadData" />

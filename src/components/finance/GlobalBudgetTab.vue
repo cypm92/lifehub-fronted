@@ -77,7 +77,12 @@ interface ExtraExpense {
   category_name?: string | null
   category_color?: string | null
 }
-interface SavingsSource { id:number; name:string; source_type:string; balance:number }
+interface SavingsSource {
+  id: number
+  name: string
+  source_type: string
+  balance: number
+}
 
 const props = defineProps<{
   summary: MonthlyBudgetSummary | null
@@ -87,6 +92,7 @@ const props = defineProps<{
   fixedExpenses: FixedExpense[]
   weeklyExpenses: WeeklyExpense[]
   extraExpenses: ExtraExpense[]
+  futureExtraExpenses: ExtraExpense[]
   savingsSources: SavingsSource[]
   monthCode: string
 }>()
@@ -109,31 +115,53 @@ const editingCategoryId = ref<number | null>(null)
 const tempPlannedAmount = ref(0)
 
 const WEEKS_LIST = [1, 2, 3, 4, 5]
-const weeklyCategories = computed(() => props.categories.filter(category => category.type === 'gasto_semanal'))
-const fixedPlanned = computed(() => props.fixedExpenses.reduce((total, expense) => total + expense.amount, 0))
-const fixedPaid = computed(() => props.fixedExpenses
-  .filter(expense => expense.status === 'Pagado')
-  .reduce((total, expense) => total + expense.amount, 0))
-const weeklyPlanned = computed(() => props.weeklyExpenses.reduce((total, expense) => total + expense.allocated_amount, 0))
-const weeklyPaid = computed(() => props.weeklyExpenses
-  .filter(expense => expense.status === 'Pagado')
-  .reduce((total, expense) => total + expense.allocated_amount, 0))
+const weeklyCategories = computed(() =>
+  props.categories.filter((category) => category.type === 'gasto_semanal')
+)
+const fixedPlanned = computed(() =>
+  props.fixedExpenses.reduce((total, expense) => total + expense.amount, 0)
+)
+const fixedPaid = computed(() =>
+  props.fixedExpenses
+    .filter((expense) => expense.status === 'Pagado')
+    .reduce((total, expense) => total + expense.amount, 0)
+)
+const weeklyPlanned = computed(() =>
+  props.weeklyExpenses.reduce((total, expense) => total + expense.allocated_amount, 0)
+)
+const weeklyPaid = computed(() =>
+  props.weeklyExpenses
+    .filter((expense) => expense.status === 'Pagado')
+    .reduce((total, expense) => total + expense.allocated_amount, 0)
+)
 const totalPlannedRecurring = computed(() => fixedPlanned.value + weeklyPlanned.value)
-const extraPaid = computed(() => props.extraExpenses
-  .filter(expense => expense.status === 'Pagado')
-  .reduce((total, expense) => total + expense.amount, 0))
-const extraPlanned = computed(() => props.extraExpenses.reduce((total, expense) => total + expense.amount, 0))
+const extraPaid = computed(() =>
+  props.extraExpenses
+    .filter((expense) => expense.status === 'Pagado')
+    .reduce((total, expense) => total + expense.amount, 0)
+)
+const extraPlanned = computed(() =>
+  props.extraExpenses.reduce((total, expense) => total + expense.amount, 0)
+)
 const totalPaidRecurring = computed(() => fixedPaid.value + weeklyPaid.value + extraPaid.value)
-const availableIncome = computed(() => props.summary?.actual_income || props.summary?.expected_income || 0)
+const availableIncome = computed(
+  () => props.summary?.actual_income || props.summary?.expected_income || 0
+)
 const projectedSavings = computed(() => availableIncome.value - totalPlannedRecurring.value)
 const remainingThisMonth = computed(() => availableIncome.value - totalPaidRecurring.value)
 const fixedPending = computed(() => fixedPlanned.value - fixedPaid.value)
 const weeklyPending = computed(() => weeklyPlanned.value - weeklyPaid.value)
 const extraPending = computed(() => extraPlanned.value - extraPaid.value)
-const pendingPayments = computed(() => fixedPending.value + weeklyPending.value + extraPending.value)
+const pendingPayments = computed(
+  () => fixedPending.value + weeklyPending.value + extraPending.value
+)
 const projectedMonthEndBalance = computed(() => remainingThisMonth.value - pendingPayments.value)
-const incomeTransactions = computed(() => props.transactions.filter(transaction => transaction.type === 'ingreso'))
-const savingsTotal = computed(() => props.savingsSources.reduce((total, source) => total + source.balance, 0))
+const incomeTransactions = computed(() =>
+  props.transactions.filter((transaction) => transaction.type === 'ingreso')
+)
+const savingsTotal = computed(() =>
+  props.savingsSources.reduce((total, source) => total + source.balance, 0)
+)
 const newTransaction = ref({
   concept: '',
   amount: 0,
@@ -142,11 +170,15 @@ const newTransaction = ref({
   week_number: 1,
 })
 
-watch(weeklyCategories, (categories) => {
-  if (!categories.some(category => category.id === newTransaction.value.category_id)) {
-    newTransaction.value.category_id = categories[0]?.id ?? null
-  }
-}, { immediate: true })
+watch(
+  weeklyCategories,
+  (categories) => {
+    if (!categories.some((category) => category.id === newTransaction.value.category_id)) {
+      newTransaction.value.category_id = categories[0]?.id ?? null
+    }
+  },
+  { immediate: true }
+)
 
 const registerIncome = () => {
   emit('createTransaction', {
@@ -236,27 +268,61 @@ const getProgressClass = (pct: number) => {
         <div class="kpi-footer">
           <span class="kpi-subtext">Total registrado este mes</span>
         </div>
-        <button class="btn-income" @click="showIncomeForm ? cancelIncomeForm() : (showIncomeForm = true)">{{ showIncomeForm ? 'Cancelar' : '+ Registrar ingreso' }}</button>
+        <button
+          class="btn-income"
+          @click="showIncomeForm ? cancelIncomeForm() : (showIncomeForm = true)"
+        >
+          {{ showIncomeForm ? 'Cancelar' : '+ Registrar ingreso' }}
+        </button>
         <form v-if="showIncomeForm" class="income-form" @submit.prevent="saveIncome">
-          <input v-model.trim="incomeForm.concept" required maxlength="120" placeholder="Ej.: Nómina de julio" />
-          <input v-model.number="incomeForm.amount" required min="0.01" step="0.01" type="number" placeholder="Importe (€)" />
-          <button class="btn-primary btn-sm" type="submit">{{ editingIncomeId === null ? 'Guardar' : 'Actualizar' }}</button>
+          <input
+            v-model.trim="incomeForm.concept"
+            required
+            maxlength="120"
+            placeholder="Ej.: Nómina de julio"
+          />
+          <input
+            v-model.number="incomeForm.amount"
+            required
+            min="0.01"
+            step="0.01"
+            type="number"
+            placeholder="Importe (€)"
+          />
+          <button class="btn-primary btn-sm" type="submit">
+            {{ editingIncomeId === null ? 'Guardar' : 'Actualizar' }}
+          </button>
         </form>
         <div v-if="incomeTransactions.length" class="income-history">
           <div v-for="income in incomeTransactions" :key="income.id" class="income-row">
-            <span class="income-details"><span class="income-date">{{ formatRecordedDate(income.date) }}</span><strong>{{ income.concept }}</strong><span>+{{ income.amount.toFixed(2) }} €</span></span>
-            <span class="income-actions"><button type="button" class="btn-link" @click="startEditIncome(income)">Editar</button><button type="button" class="btn-link danger" @click="deleteIncome(income)">Eliminar</button></span>
+            <span class="income-details"
+              ><span class="income-date">{{ formatRecordedDate(income.date) }}</span
+              ><strong>{{ income.concept }}</strong
+              ><span>+{{ income.amount.toFixed(2) }} €</span></span
+            >
+            <span class="income-actions"
+              ><button type="button" class="btn-link" @click="startEditIncome(income)">
+                Editar</button
+              ><button type="button" class="btn-link danger" @click="deleteIncome(income)">
+                Eliminar
+              </button></span
+            >
           </div>
         </div>
       </div>
       <div class="card kpi-card">
-        <div class="kpi-header"><span>Ahorros actuales</span><span class="currency-tag">EUR</span></div>
+        <div class="kpi-header">
+          <span>Ahorros actuales</span><span class="currency-tag">EUR</span>
+        </div>
         <div class="kpi-amount text-primary">{{ savingsTotal.toFixed(2) }} €</div>
         <div class="savings-list">
           <div v-for="source in savingsSources" :key="source.id" class="savings-item">
-            <span>{{ source.name }} · {{ source.source_type }}</span><strong>{{ source.balance.toFixed(2) }} €</strong>
+            <span>{{ source.name }} · {{ source.source_type }}</span
+            ><strong>{{ source.balance.toFixed(2) }} €</strong>
           </div>
-          <span v-if="!savingsSources.length" class="kpi-subtext">Sin fuentes de ahorro configuradas.</span>
+          <span v-if="!savingsSources.length" class="kpi-subtext"
+            >Sin fuentes de ahorro configuradas.</span
+          >
         </div>
         <button class="savings-link" @click="emit('showSavings')">Gestionar ahorros →</button>
       </div>
@@ -266,16 +332,36 @@ const getProgressClass = (pct: number) => {
           <span>Gastos mes actual</span>
           <span class="currency-tag">EUR</span>
         </div>
-        <div class="budget-total"><div class="kpi-amount" :class="totalPaidRecurring > totalPlannedRecurring ? 'text-danger' : 'text-success'">{{ totalPaidRecurring.toFixed(2) }} €</div><span class="kpi-subtext">Pagado actualmente</span></div>
+        <div class="budget-total">
+          <div
+            class="kpi-amount"
+            :class="totalPaidRecurring > totalPlannedRecurring ? 'text-danger' : 'text-success'"
+          >
+            {{ totalPaidRecurring.toFixed(2) }} €
+          </div>
+          <span class="kpi-subtext">Pagado actualmente</span>
+        </div>
         <div class="kpi-breakdown planned-breakdown">
-          <div><span>Fijos presupuestados</span><strong>{{ fixedPlanned.toFixed(2) }} €</strong></div>
-          <div><span>Semanales presupuestados</span><strong>{{ weeklyPlanned.toFixed(2) }} €</strong></div>
-          <div><span>Extras presupuestados</span><strong>{{ extraPlanned.toFixed(2) }} €</strong></div>
+          <div>
+            <span>Fijos presupuestados</span><strong>{{ fixedPlanned.toFixed(2) }} €</strong>
+          </div>
+          <div>
+            <span>Semanales presupuestados</span><strong>{{ weeklyPlanned.toFixed(2) }} €</strong>
+          </div>
+          <div>
+            <span>Extras presupuestados</span><strong>{{ extraPlanned.toFixed(2) }} €</strong>
+          </div>
         </div>
         <div class="kpi-breakdown">
-          <div><span>Fijos pagados</span><strong>{{ fixedPaid.toFixed(2) }} €</strong></div>
-          <div><span>Semanales pagados</span><strong>{{ weeklyPaid.toFixed(2) }} €</strong></div>
-          <div><span>Extras pagados</span><strong>{{ extraPaid.toFixed(2) }} €</strong></div>
+          <div>
+            <span>Fijos pagados</span><strong>{{ fixedPaid.toFixed(2) }} €</strong>
+          </div>
+          <div>
+            <span>Semanales pagados</span><strong>{{ weeklyPaid.toFixed(2) }} €</strong>
+          </div>
+          <div>
+            <span>Extras pagados</span><strong>{{ extraPaid.toFixed(2) }} €</strong>
+          </div>
         </div>
       </div>
 
@@ -287,12 +373,29 @@ const getProgressClass = (pct: number) => {
           {{ remainingThisMonth.toFixed(2) }} €
         </div>
         <div class="kpi-breakdown">
-          <div><span>Ingresos</span><strong>{{ availableIncome.toFixed(2) }} €</strong></div>
-          <div><span>Pagado</span><strong>{{ totalPaidRecurring.toFixed(2) }} €</strong></div>
-          <div><span>Pendiente</span><strong :class="pendingPayments > 0 ? 'text-warning' : 'text-success'">{{ pendingPayments.toFixed(2) }} €</strong></div>
+          <div>
+            <span>Ingresos</span><strong>{{ availableIncome.toFixed(2) }} €</strong>
+          </div>
+          <div>
+            <span>Pagado</span><strong>{{ totalPaidRecurring.toFixed(2) }} €</strong>
+          </div>
+          <div>
+            <span>Pendiente</span
+            ><strong :class="pendingPayments > 0 ? 'text-warning' : 'text-success'"
+              >{{ pendingPayments.toFixed(2) }} €</strong
+            >
+          </div>
         </div>
-        <div class="pending-detail">Pendiente: Fijos {{ fixedPending.toFixed(2) }} € · Semanales {{ weeklyPending.toFixed(2) }} € · Extras {{ extraPending.toFixed(2) }} €</div>
-        <div class="balance-projection"><span>Saldo al cerrar el mes</span><strong :class="projectedMonthEndBalance >= 0 ? 'text-success' : 'text-danger'">{{ projectedMonthEndBalance.toFixed(2) }} €</strong></div>
+        <div class="pending-detail">
+          Pendiente: Fijos {{ fixedPending.toFixed(2) }} € · Semanales
+          {{ weeklyPending.toFixed(2) }} € · Extras {{ extraPending.toFixed(2) }} €
+        </div>
+        <div class="balance-projection">
+          <span>Saldo al cerrar el mes</span
+          ><strong :class="projectedMonthEndBalance >= 0 ? 'text-success' : 'text-danger'"
+            >{{ projectedMonthEndBalance.toFixed(2) }} €</strong
+          >
+        </div>
       </div>
     </div>
 
@@ -310,6 +413,12 @@ const getProgressClass = (pct: number) => {
     <ExtrasSummary
       :expenses="extraExpenses"
       :month-code="monthCode"
+      @view-all="emit('showExtraExpenses')"
+    />
+    <ExtrasSummary
+      :expenses="futureExtraExpenses"
+      :month-code="monthCode"
+      :future="true"
       @view-all="emit('showExtraExpenses')"
     />
 
@@ -332,21 +441,27 @@ const getProgressClass = (pct: number) => {
               <div class="cat-amounts">
                 <span>{{ item.actual_spent.toFixed(2) }} €</span>
                 <span class="separator">/</span>
-                <div v-if="editingCategoryId !== item.category.id" @click="startEditBudgetItem(item)" class="planned-tag">
+                <div
+                  v-if="editingCategoryId !== item.category.id"
+                  @click="startEditBudgetItem(item)"
+                  class="planned-tag"
+                >
                   {{ item.planned_amount.toFixed(2) }} € ✏️
                 </div>
                 <div v-else class="inline-edit">
                   <input v-model.number="tempPlannedAmount" type="number" class="input input-xs" />
-                  <button @click="saveBudgetItem(item.category.id)" class="btn-primary btn-xs">✓</button>
+                  <button @click="saveBudgetItem(item.category.id)" class="btn-primary btn-xs">
+                    ✓
+                  </button>
                 </div>
               </div>
             </div>
 
             <div class="progress-bar-container">
               <div
-                  class="progress-bar-fill"
-                  :class="getProgressClass(item.percentage_used)"
-                  :style="{ width: Math.min(item.percentage_used, 100) + '%' }"
+                class="progress-bar-fill"
+                :class="getProgressClass(item.percentage_used)"
+                :style="{ width: Math.min(item.percentage_used, 100) + '%' }"
               ></div>
             </div>
             <div class="pct-text">{{ item.percentage_used }}% consumido</div>
@@ -362,11 +477,22 @@ const getProgressClass = (pct: number) => {
             <div class="form-row">
               <div class="form-group flex-1">
                 <label>Concepto</label>
-                <input v-model="newTransaction.concept" class="input" placeholder="Ej: Compra Mercadona" required />
+                <input
+                  v-model="newTransaction.concept"
+                  class="input"
+                  placeholder="Ej: Compra Mercadona"
+                  required
+                />
               </div>
               <div class="form-group width-140">
                 <label>Importe (€)</label>
-                <input v-model.number="newTransaction.amount" type="number" step="0.01" class="input" required />
+                <input
+                  v-model.number="newTransaction.amount"
+                  type="number"
+                  step="0.01"
+                  class="input"
+                  required
+                />
               </div>
             </div>
 
@@ -397,7 +523,9 @@ const getProgressClass = (pct: number) => {
                 <div class="form-group flex-1">
                   <label>Categoría Semanal</label>
                   <select v-model.number="newTransaction.category_id" class="input" required>
-                    <option v-for="cat in weeklyCategories" :key="cat.id" :value="cat.id">{{ cat.icon }} {{ cat.name }}</option>
+                    <option v-for="cat in weeklyCategories" :key="cat.id" :value="cat.id">
+                      {{ cat.icon }} {{ cat.name }}
+                    </option>
                   </select>
                 </div>
               </div>
@@ -424,28 +552,32 @@ const getProgressClass = (pct: number) => {
           <div class="table-container">
             <table class="clean-table">
               <thead>
-              <tr>
-                <th>Concepto</th>
-                <th>Categoría</th>
-                <th>Importe</th>
-              </tr>
+                <tr>
+                  <th>Concepto</th>
+                  <th>Categoría</th>
+                  <th>Importe</th>
+                </tr>
               </thead>
               <tbody>
-              <tr v-for="t in transactions" :key="t.id">
-                <td><strong>{{ t.concept }}</strong></td>
-                <td>
+                <tr v-for="t in transactions" :key="t.id">
+                  <td>
+                    <strong>{{ t.concept }}</strong>
+                  </td>
+                  <td>
                     <span v-if="t.category" class="cat-pill">
                       {{ t.category?.icon }} {{ t.category?.name }}
                     </span>
-                  <span v-else class="type-pill">{{ t.type }}</span>
-                </td>
-                <td :class="t.type === 'ingreso' ? 'text-success' : 'text-danger'">
-                  {{ t.type === 'ingreso' ? '+' : '-' }}{{ t.amount.toFixed(2) }} €
-                </td>
-              </tr>
-              <tr v-if="transactions.length === 0">
-                <td colspan="3" class="text-center text-muted">No hay movimientos registrados este mes.</td>
-              </tr>
+                    <span v-else class="type-pill">{{ t.type }}</span>
+                  </td>
+                  <td :class="t.type === 'ingreso' ? 'text-success' : 'text-danger'">
+                    {{ t.type === 'ingreso' ? '+' : '-' }}{{ t.amount.toFixed(2) }} €
+                  </td>
+                </tr>
+                <tr v-if="transactions.length === 0">
+                  <td colspan="3" class="text-center text-muted">
+                    No hay movimientos registrados este mes.
+                  </td>
+                </tr>
               </tbody>
             </table>
           </div>
@@ -490,12 +622,27 @@ const getProgressClass = (pct: number) => {
   color: var(--text-muted);
 }
 
-.kpi-card:nth-child(2) { order: 4; }
-.kpi-card { padding-top: 15px; padding-bottom: 15px; }
-.kpi-card .kpi-amount { margin-top: 8px; margin-bottom: 8px; }
-.kpi-card .balance-projection { margin-top: 8px; padding-top: 6px; }
-.kpi-card:nth-child(3) { order: 2; }
-.kpi-card:nth-child(4) { order: 3; }
+.kpi-card:nth-child(2) {
+  order: 4;
+}
+.kpi-card {
+  padding-top: 15px;
+  padding-bottom: 15px;
+}
+.kpi-card .kpi-amount {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+.kpi-card .balance-projection {
+  margin-top: 8px;
+  padding-top: 6px;
+}
+.kpi-card:nth-child(3) {
+  order: 2;
+}
+.kpi-card:nth-child(4) {
+  order: 3;
+}
 
 .kpi-breakdown {
   display: grid;
@@ -504,17 +651,50 @@ const getProgressClass = (pct: number) => {
   margin-top: 8px;
 }
 
-.kpi-breakdown div { display: flex; flex-direction: column; gap: 2px; }
-.kpi-breakdown span { color: var(--text-muted); font-size: 0.72rem; }
-.kpi-breakdown strong { font-size: 0.82rem; }
-.planned-breakdown { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--border-color); }
+.kpi-breakdown div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.kpi-breakdown span {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+.kpi-breakdown strong {
+  font-size: 0.82rem;
+}
+.planned-breakdown {
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+}
 
-.budget-total { display: flex; align-items: baseline; gap: 8px; }
-.budget-total .kpi-amount { margin: 12px 0; }
+.budget-total {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.budget-total .kpi-amount {
+  margin: 12px 0;
+}
 
-.balance-projection { display:flex; justify-content:space-between; margin-top:12px; padding-top:8px; border-top:1px solid var(--border-color); font-size:.78rem; }
-.balance-projection span { color:var(--text-muted); }
-.pending-detail { margin-top:9px; color:var(--text-muted); font-size:.72rem; line-height:1.35; }
+.balance-projection {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-color);
+  font-size: 0.78rem;
+}
+.balance-projection span {
+  color: var(--text-muted);
+}
+.pending-detail {
+  margin-top: 9px;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+  line-height: 1.35;
+}
 
 .btn-income {
   margin-top: 12px;
@@ -642,9 +822,18 @@ const getProgressClass = (pct: number) => {
   margin-bottom: 28px;
 }
 
-:deep(.fixed-summary), :deep(.weekly-summary), :deep(.extras-summary) { margin-bottom: 16px; }
-:deep(.summary-header) { margin-bottom: 10px; }
-:deep(.summary-metrics div), :deep(.metrics div) { padding: 9px; }
+:deep(.fixed-summary),
+:deep(.weekly-summary),
+:deep(.extras-summary) {
+  margin-bottom: 16px;
+}
+:deep(.summary-header) {
+  margin-bottom: 10px;
+}
+:deep(.summary-metrics div),
+:deep(.metrics div) {
+  padding: 9px;
+}
 
 .fixed-expenses-header {
   display: flex;
@@ -830,7 +1019,9 @@ const getProgressClass = (pct: number) => {
   font-size: 0.9rem;
 }
 
-.separator { color: var(--text-muted); }
+.separator {
+  color: var(--text-muted);
+}
 
 .planned-tag {
   background: #f1f5f9;
@@ -859,9 +1050,15 @@ const getProgressClass = (pct: number) => {
   transition: width 0.4s ease;
 }
 
-.bar-success { background: #22c55e; }
-.bar-warning { background: #f59e0b; }
-.bar-danger  { background: #ef4444; }
+.bar-success {
+  background: #22c55e;
+}
+.bar-warning {
+  background: #f59e0b;
+}
+.bar-danger {
+  background: #ef4444;
+}
 
 .pct-text {
   font-size: 0.75rem;
@@ -881,9 +1078,15 @@ const getProgressClass = (pct: number) => {
   gap: 12px;
 }
 
-.flex-1 { flex: 1; }
-.width-140 { width: 140px; }
-.width-full { width: 100%; }
+.flex-1 {
+  flex: 1;
+}
+.width-140 {
+  width: 140px;
+}
+.width-full {
+  width: 100%;
+}
 
 .form-group {
   display: flex;
@@ -949,12 +1152,26 @@ const getProgressClass = (pct: number) => {
   font-size: 0.9rem;
 }
 
-.text-center { text-align: center; }
-.text-success { color: #16a34a; font-weight: 700; }
-.text-danger { color: #dc2626; font-weight: 700; }
-.text-primary { color: var(--primary, #3b82f6); }
-.text-main { color: var(--text-main); }
-.text-muted { color: var(--text-muted); }
+.text-center {
+  text-align: center;
+}
+.text-success {
+  color: #16a34a;
+  font-weight: 700;
+}
+.text-danger {
+  color: #dc2626;
+  font-weight: 700;
+}
+.text-primary {
+  color: var(--primary, #3b82f6);
+}
+.text-main {
+  color: var(--text-main);
+}
+.text-muted {
+  color: var(--text-muted);
+}
 
 .input {
   padding: 8px 12px;
@@ -979,9 +1196,27 @@ const getProgressClass = (pct: number) => {
   cursor: pointer;
 }
 
-.input-sm { padding: 6px 10px; font-size: 0.9rem; }
-.btn-sm { padding: 6px 12px; font-size: 0.85rem; }
-.input-xs { padding: 2px 6px; font-size: 0.8rem; width: 70px; }
-.btn-xs { padding: 2px 8px; font-size: 0.8rem; border-radius: 6px; }
-.inline-edit { display: flex; gap: 4px; align-items: center; }
+.input-sm {
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.85rem;
+}
+.input-xs {
+  padding: 2px 6px;
+  font-size: 0.8rem;
+  width: 70px;
+}
+.btn-xs {
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  border-radius: 6px;
+}
+.inline-edit {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
 </style>

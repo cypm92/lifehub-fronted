@@ -1,10 +1,154 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import api from '../../services/api'
-interface Source { id:number; name:string; source_type:string; balance:number }
-const emit=defineEmits<{(e:'refresh'):void}>(); const sources=ref<Source[]>([]);const editing=ref<number|null>(null);const form=ref({name:'',source_type:'Banco',balance:0})
-const total=computed(()=>sources.value.reduce((sum,x)=>sum+x.balance,0));const load=async()=>{sources.value=(await api.get('/savings-sources')).data};const reset=()=>{editing.value=null;form.value={name:'',source_type:'Banco',balance:0}}
-const save=async()=>{if(editing.value===null)await api.post('/savings-sources',form.value);else await api.put(`/savings-sources/${editing.value}`,form.value);await load();emit('refresh');reset()};const edit=(x:Source)=>{editing.value=x.id;form.value={name:x.name,source_type:x.source_type,balance:x.balance}};const remove=async(x:Source)=>{if(confirm(`¿Eliminar "${x.name}"?`)){await api.delete(`/savings-sources/${x.id}`);await load();emit('refresh')}};onMounted(load)
+interface Source {
+  id: number
+  name: string
+  source_type: string
+  balance: number
+}
+const emit = defineEmits<{ (e: 'refresh'): void }>()
+const sources = ref<Source[]>([])
+const editing = ref<number | null>(null)
+const form = ref({ name: '', source_type: 'Banco', balance: 0 })
+const total = computed(() => sources.value.reduce((sum, x) => sum + x.balance, 0))
+const load = async () => {
+  sources.value = (await api.get('/savings-sources')).data
+}
+const reset = () => {
+  editing.value = null
+  form.value = { name: '', source_type: 'Banco', balance: 0 }
+}
+const save = async () => {
+  if (editing.value === null) await api.post('/savings-sources', form.value)
+  else await api.put(`/savings-sources/${editing.value}`, form.value)
+  await load()
+  emit('refresh')
+  reset()
+}
+const edit = (x: Source) => {
+  editing.value = x.id
+  form.value = { name: x.name, source_type: x.source_type, balance: x.balance }
+}
+const remove = async (x: Source) => {
+  if (confirm(`¿Eliminar "${x.name}"?`)) {
+    await api.delete(`/savings-sources/${x.id}`)
+    await load()
+    emit('refresh')
+  }
+}
+onMounted(load)
 </script>
-<template><section class="card"><header><div><h3>Ahorros</h3><p>Saldo disponible en bancos, efectivo y otras fuentes.</p></div><strong>{{total.toFixed(2)}} €</strong></header><form @submit.prevent="save"><input v-model.trim="form.name" required placeholder="Ej.: BBVA"/><select v-model="form.source_type"><option>Banco</option><option>Efectivo</option><option>Plan de pensiones</option><option>Otra</option></select><input v-model.number="form.balance" required min="0" step=".01" type="number" placeholder="Saldo actual"/><button> {{editing===null?'Añadir fuente':'Actualizar'}} </button><button v-if="editing!==null" type="button" @click="reset">Cancelar</button></form><div class="list"><article v-for="x in sources" :key="x.id"><div><b>{{x.name}}</b><span>{{x.source_type}}</span></div><strong>{{x.balance.toFixed(2)}} €</strong><button @click="edit(x)">Editar</button><button class="danger" @click="remove(x)">Eliminar</button></article><p v-if="!sources.length">Aún no has añadido fuentes de dinero.</p></div></section></template>
-<style scoped>.card{background:#fff;padding:24px;border:1px solid var(--border-color);border-radius:12px}header,form,article{display:flex;align-items:center;gap:12px}header{justify-content:space-between}h3,p{margin:0}header p,span{display:block;color:var(--text-muted);font-size:.85rem}form{margin:20px 0;padding:14px;background:#f8fafc;border-radius:9px}input,select{flex:1;padding:9px;border:1px solid var(--border-color);border-radius:7px}button{border:0;border-radius:7px;padding:9px 12px;background:var(--primary);color:#fff;font-weight:700;cursor:pointer}.list{border-top:1px solid var(--border-color)}article{padding:13px 4px;border-bottom:1px solid var(--border-color)}article div{flex:1}article button{background:none;color:var(--primary);padding:0}.danger{color:#dc2626}@media(max-width:700px){form{flex-wrap:wrap}}</style>
+<template>
+  <section class="card">
+    <header>
+      <div>
+        <h3>Ahorros</h3>
+        <p>Saldo disponible en bancos, efectivo y otras fuentes.</p>
+      </div>
+      <strong>{{ total.toFixed(2) }} €</strong>
+    </header>
+    <form @submit.prevent="save">
+      <input v-model.trim="form.name" required placeholder="Ej.: BBVA" /><select
+        v-model="form.source_type"
+      >
+        <option>Banco</option>
+        <option>Efectivo</option>
+        <option>Plan de pensiones</option>
+        <option>Otra</option></select
+      ><input
+        v-model.number="form.balance"
+        required
+        min="0"
+        step=".01"
+        type="number"
+        placeholder="Saldo actual"
+      /><button>{{ editing === null ? 'Añadir fuente' : 'Actualizar' }}</button
+      ><button v-if="editing !== null" type="button" @click="reset">Cancelar</button>
+    </form>
+    <div class="list">
+      <article v-for="x in sources" :key="x.id">
+        <div>
+          <b>{{ x.name }}</b
+          ><span>{{ x.source_type }}</span>
+        </div>
+        <strong>{{ x.balance.toFixed(2) }} €</strong><button @click="edit(x)">Editar</button
+        ><button class="danger" @click="remove(x)">Eliminar</button>
+      </article>
+      <p v-if="!sources.length">Aún no has añadido fuentes de dinero.</p>
+    </div>
+  </section>
+</template>
+<style scoped>
+.card {
+  background: #fff;
+  padding: 24px;
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+}
+header,
+form,
+article {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+header {
+  justify-content: space-between;
+}
+h3,
+p {
+  margin: 0;
+}
+header p,
+span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+form {
+  margin: 20px 0;
+  padding: 14px;
+  background: #f8fafc;
+  border-radius: 9px;
+}
+input,
+select {
+  flex: 1;
+  padding: 9px;
+  border: 1px solid var(--border-color);
+  border-radius: 7px;
+}
+button {
+  border: 0;
+  border-radius: 7px;
+  padding: 9px 12px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+.list {
+  border-top: 1px solid var(--border-color);
+}
+article {
+  padding: 13px 4px;
+  border-bottom: 1px solid var(--border-color);
+}
+article div {
+  flex: 1;
+}
+article button {
+  background: none;
+  color: var(--primary);
+  padding: 0;
+}
+.danger {
+  color: #dc2626;
+}
+@media (max-width: 700px) {
+  form {
+    flex-wrap: wrap;
+  }
+}
+</style>

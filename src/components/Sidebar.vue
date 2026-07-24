@@ -17,7 +17,10 @@ const logout = () => {
   <aside class="sidebar">
     <router-link to="/settings" class="brand" :class="{ active: route.path === '/settings' }">
       <div class="brand-logo">⚙</div>
-      <div><span class="brand-name">{{ user.name || 'Configuración' }}</span><small>{{ user.email || 'Gestionar perfil' }}</small></div>
+      <div>
+        <span class="brand-name">{{ user.name || 'Configuración' }}</span
+        ><small>{{ user.email || 'Gestionar perfil' }}</small>
+      </div>
     </router-link>
 
     <!-- Menú de Navegación -->
@@ -38,9 +41,7 @@ const logout = () => {
 
     <!-- Pie del Menú -->
     <div class="sidebar-footer">
-      <button @click="logout" class="btn-logout">
-        <span class="icon">🚪</span> Cerrar Sesión
-      </button>
+      <button @click="logout" class="btn-logout"><span class="icon">🚪</span> Cerrar Sesión</button>
     </div>
   </aside>
 </template>
@@ -86,7 +87,15 @@ const logout = () => {
   font-size: 1.25rem;
 }
 
-.brand small { display:block; max-width:145px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text-muted); font-size:.72rem; }
+.brand small {
+  display: block;
+  max-width: 145px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
 
 .nav-menu {
   display: flex;
