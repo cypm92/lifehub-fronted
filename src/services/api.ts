@@ -1,7 +1,9 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8000',
+  // En Docker se usa /api y Vite lo redirige al contenedor backend. Fuera de
+  // Docker se mantiene la URL local habitual para el flujo de desarrollo.
+  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000',
 })
 
 // Interceptor: añade automáticamente el token Bearer a cada petición si existe

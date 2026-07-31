@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import WeeklyExpensesSummary from './WeeklyExpensesSummary.vue'
 
 interface WeeklyExpense {
   id: number
@@ -40,6 +41,31 @@ const loadCategories = async () => {
 const openManager = async () => {
   await loadCategories()
   isManagerOpen.value = true
+}
+
+const addManualWeek = async (direction: 'before' | 'after') => {
+  try {
+    const { default: api } = await import('../../services/api')
+    await api.post(`/weekly-expenses/${props.monthCode}/manual-cycle`, { direction })
+    emit('refresh')
+  } catch (error: any) {
+    alert(error.response?.data?.detail || 'No se pudo añadir la semana')
+  }
+}
+
+const removeBoundaryWeek = async (direction: 'before' | 'after') => {
+  const label = direction === 'before' ? 'la primera' : 'la última'
+  if (!confirm(`¿Eliminar ${label} semana?`)) return
+
+  try {
+    const { default: api } = await import('../../services/api')
+    await api.delete(`/weekly-expenses/${props.monthCode}/boundary-cycle`, {
+      params: { direction },
+    })
+    emit('refresh')
+  } catch (error: any) {
+    alert(error.response?.data?.detail || 'No se pudo eliminar la semana')
+  }
 }
 
 const resetCategoryForm = () => {
@@ -128,14 +154,50 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 </script>
 
 <template>
-  <div>
+  <section class="weekly-control-card">
     <div class="weekly-actions">
       <div>
         <h3>Configuración semanal</h3>
         <span>Define categorías e importe para cada semana.</span>
       </div>
-      <button class="btn-manage" @click="openManager">+ Añadir gasto</button>
+      <div class="weekly-action-buttons">
+        <button
+          class="btn-secondary"
+          :disabled="!weeklyExpenses.length"
+          @click="addManualWeek('before')"
+        >
+          + Semana anterior
+        </button>
+        <button
+          class="btn-secondary"
+          :disabled="!weeklyExpenses.length"
+          @click="addManualWeek('after')"
+        >
+          + Semana posterior
+        </button>
+        <button
+          class="btn-danger-outline"
+          :disabled="Object.keys(groupedWeeks).length <= 1"
+          @click="removeBoundaryWeek('before')"
+        >
+          − Eliminar primera
+        </button>
+        <button
+          class="btn-danger-outline"
+          :disabled="Object.keys(groupedWeeks).length <= 1"
+          @click="removeBoundaryWeek('after')"
+        >
+          − Eliminar última
+        </button>
+        <button class="btn-manage" @click="openManager">+ Añadir gasto</button>
+      </div>
     </div>
+    <WeeklyExpensesSummary
+      v-if="weeklyExpenses.length"
+      :weekly-expenses="weeklyExpenses"
+      embedded
+      :show-weeks="false"
+    />
     <!-- Si hay semanas, mostramos el grid -->
     <div v-if="weeklyExpenses && weeklyExpenses.length > 0" class="weeks-grid">
       <div v-for="(items, weekNum) in groupedWeeks" :key="weekNum" class="card week-card">
@@ -266,14 +328,21 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
         </div>
       </form>
     </div>
-  </div>
+  </section>
 </template>
 
 <style scoped>
+.weekly-control-card {
+  margin-bottom: 0;
+  padding: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-card);
+}
 .card {
-  background: white;
-  padding: 20px;
-  border-radius: 12px;
+  background: #f8fafc;
+  padding: 14px;
+  border-radius: 10px;
   border: 1px solid var(--border-color);
 }
 
@@ -292,14 +361,18 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 
 .weeks-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
 }
 
 .week-card {
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
 .week-header {
@@ -342,9 +415,9 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 
 .week-table th,
 .week-table td {
-  padding: 8px 4px;
+  padding: 7px 3px;
   text-align: left;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   border-bottom: 1px solid #f1f5f9;
 }
 
@@ -353,7 +426,17 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 18px;
+  margin-bottom: 12px;
+}
+.weekly-action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.weekly-action-buttons button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 .weekly-actions h3 {
   margin: 0 0 4px;
@@ -367,7 +450,7 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 .btn-secondary {
   border: 0;
   border-radius: 8px;
-  padding: 9px 14px;
+  padding: 8px 12px;
   cursor: pointer;
   font-weight: 650;
 }
@@ -379,6 +462,15 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 .btn-secondary {
   background: #e2e8f0;
   color: var(--text-main);
+}
+.btn-danger-outline {
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 8px 12px;
+  background: white;
+  color: #dc2626;
+  cursor: pointer;
+  font-weight: 650;
 }
 .modal-backdrop {
   position: fixed;
@@ -497,7 +589,7 @@ label input {
 
 .btn-status-toggle {
   border: none;
-  padding: 4px 10px;
+  padding: 4px 8px;
   border-radius: 6px;
   font-size: 0.8rem;
   font-weight: 600;
@@ -528,5 +620,30 @@ label select {
   border-radius: 8px;
   background: white;
   font: inherit;
+}
+
+@media (max-width: 1450px) {
+  .weeks-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .weeks-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .weekly-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+  .weekly-action-buttons {
+    justify-content: flex-start;
+  }
+  .weeks-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

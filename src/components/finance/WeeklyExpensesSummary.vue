@@ -9,7 +9,14 @@ interface WeeklyExpense {
   status: 'Pagado' | 'Parado' | 'Esperando'
 }
 
-const props = defineProps<{ weeklyExpenses: WeeklyExpense[] }>()
+const props = withDefaults(
+  defineProps<{
+    weeklyExpenses: WeeklyExpense[]
+    embedded?: boolean
+    showWeeks?: boolean
+  }>(),
+  { showWeeks: true }
+)
 const emit = defineEmits<{ (e: 'viewAll'): void }>()
 
 const planned = computed(() =>
@@ -38,15 +45,15 @@ const weeks = computed(() => {
 </script>
 
 <template>
-  <section class="weekly-summary card">
-    <div class="summary-header">
+  <section :class="['weekly-summary', { card: !embedded, embedded }]">
+    <div v-if="!embedded" class="summary-header">
       <div>
         <h3>Gastos Semanales</h3>
         <span>Control y presupuesto por semana</span>
       </div>
       <button class="btn-link" @click="emit('viewAll')">Abrir Gastos semanales →</button>
     </div>
-    <div class="summary-body">
+    <div :class="['summary-body', { 'metrics-only': showWeeks === false }]">
       <div class="summary-metrics">
         <div>
           <span>Presupuestado</span><strong>{{ planned.toFixed(2) }} €</strong>
@@ -59,7 +66,7 @@ const weeks = computed(() => {
           ><strong :class="pending ? 'warning' : 'success'">{{ pending.toFixed(2) }} €</strong>
         </div>
       </div>
-      <div class="weeks-list">
+      <div v-if="showWeeks !== false" class="weeks-list">
         <div v-for="week in weeks" :key="week.number" class="week-item">
           <span :class="['week-state', { paid: week.paid }]">{{
             week.paid ? '✓' : week.number
@@ -78,6 +85,9 @@ const weeks = computed(() => {
 <style scoped>
 .weekly-summary {
   margin-bottom: 28px;
+}
+.weekly-summary.embedded {
+  margin: 14px 0 0;
 }
 .summary-header {
   display: flex;
@@ -108,6 +118,9 @@ small,
   display: grid;
   grid-template-columns: minmax(310px, 0.9fr) minmax(280px, 1.1fr);
   gap: 22px;
+}
+.summary-body.metrics-only {
+  grid-template-columns: minmax(310px, 1fr);
 }
 .summary-metrics {
   display: grid;

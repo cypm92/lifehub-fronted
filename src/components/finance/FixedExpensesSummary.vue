@@ -14,6 +14,7 @@ interface FixedExpense {
 const props = defineProps<{
   fixedExpenses: FixedExpense[]
   monthCode: string
+  embedded?: boolean
 }>()
 
 const emit = defineEmits<{ (e: 'viewAll'): void }>()
@@ -36,8 +37,8 @@ const nextExpenses = computed(() =>
 </script>
 
 <template>
-  <section class="fixed-summary card">
-    <div class="summary-header">
+  <section :class="['fixed-summary', { card: !embedded, embedded }]">
+    <div v-if="!embedded" class="summary-header">
       <div>
         <h3>Gastos Fijos</h3>
         <span>Resumen de {{ monthCode }}</span>
@@ -81,6 +82,9 @@ const nextExpenses = computed(() =>
 <style scoped>
 .fixed-summary {
   margin-bottom: 28px;
+}
+.fixed-summary.embedded {
+  margin: 0 0 20px;
 }
 .summary-header {
   display: flex;
