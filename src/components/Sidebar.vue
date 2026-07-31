@@ -25,9 +25,19 @@ const logout = () => {
 
     <!-- Menú de Navegación -->
     <nav class="nav-menu">
-      <router-link to="/finances" class="nav-item" :class="{ active: route.path === '/finances' }">
+      <router-link
+        to="/finances"
+        class="nav-item"
+        :class="{ active: route.path === '/finances' }"
+      >
         <span class="icon">📊</span> Finanzas
       </router-link>
+      <div v-if="route.path === '/finances'" class="finance-submenu">
+        <router-link to="/finances?tab=fijos">📌 Gastos fijos</router-link>
+        <router-link to="/finances?tab=semanal">🗓️ Gastos semanales</router-link>
+        <router-link to="/finances?tab=extras">🛒 Otros gastos</router-link>
+        <router-link to="/finances?tab=ahorros">💰 Ahorros</router-link>
+      </div>
       <router-link to="/vehicles" class="nav-item" :class="{ active: route.path === '/vehicles' }">
         <span class="icon">🚗</span> Vehículos
       </router-link>
@@ -125,6 +135,29 @@ const logout = () => {
   background: var(--primary);
   color: white;
   box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+}
+.finance-submenu {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin: -2px 0 8px 20px;
+  padding-left: 13px;
+  border-left: 1px solid var(--border-color);
+}
+.finance-submenu a {
+  border-radius: 7px;
+  color: var(--text-muted);
+  font-size: 0.84rem;
+  padding: 7px 9px;
+  text-decoration: none;
+}
+.finance-submenu a:hover {
+  background: var(--bg-app);
+  color: var(--text-main);
+}
+.finance-submenu a.router-link-exact-active {
+  color: var(--primary);
+  font-weight: 700;
 }
 
 .sidebar-footer {

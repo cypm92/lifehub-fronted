@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import api from '../services/api'
 
 // Importar los nuevos subcomponentes
@@ -39,6 +40,12 @@ interface MonthlyBudgetSummary {
   total_planned_expense: number
   total_actual_expense: number
   items: CategorySummary[]
+}
+
+interface BudgetMonth {
+  month_code: string
+  is_closed: boolean
+  closed_at: string | null
 }
 
 interface Transaction {
@@ -94,9 +101,19 @@ interface ExtraExpense {
 }
 
 // --- ESTADOS ---
-const activeTab = ref<'semanal' | 'resumen' | 'fijos' | 'extras' | 'ahorros'>('resumen')
+type FinanceTab = 'semanal' | 'resumen' | 'fijos' | 'extras' | 'ahorros'
+const route = useRoute()
+const router = useRouter()
+const validTabs: FinanceTab[] = ['resumen', 'fijos', 'semanal', 'extras', 'ahorros']
+const activeTab = ref<FinanceTab>('resumen')
 const getInitialMonth = () => new Date().toISOString().slice(0, 7)
-const currentMonth = ref<string>(getInitialMonth())
+const currentMonth = ref('')
+const availableMonths = ref<BudgetMonth[]>([])
+const currentMonthIndex = computed(() =>
+  availableMonths.value.findIndex((budget) => budget.month_code === currentMonth.value)
+)
+const currentBudget = computed(() => availableMonths.value[currentMonthIndex.value] ?? null)
+const isLatestBudget = computed(() => currentMonthIndex.value === availableMonths.value.length - 1)
 
 const users = ref<User[]>([])
 const categories = ref<Category[]>([])
@@ -119,15 +136,13 @@ const formattedMonthName = computed(() => {
 })
 
 const changeMonth = (offset: number) => {
-  const parts = currentMonth.value.split('-').map(Number)
-  const year = parts[0] ?? new Date().getFullYear()
-  const month = parts[1] ?? 1
-  const date = new Date(year, month - 1 + offset, 1)
-  currentMonth.value = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
+  const target = availableMonths.value[currentMonthIndex.value + offset]
+  if (target) currentMonth.value = target.month_code
 }
 
 // --- CARGA DE DATOS ---
 const loadData = async () => {
+  if (!currentMonth.value) return
   try {
     await loadFixedExpenses()
     await loadExtraExpenses()
@@ -153,6 +168,30 @@ const loadData = async () => {
     await loadWeeklyExpenses()
   } catch (error) {
     console.error('Error cargando los datos financieros:', error)
+  }
+}
+
+const loadBudgetMonths = async () => {
+  const response = await api.get('/budgets/months')
+  availableMonths.value = response.data
+}
+
+const saveBudgetState = async () => {
+  try {
+    await api.post(`/budgets/${currentMonth.value}/save-state`)
+    alert('Estado actual guardado en el histórico')
+  } catch (error: any) {
+    alert(error.response?.data?.detail || 'No se pudo guardar el presupuesto')
+  }
+}
+
+const createNextBudget = async () => {
+  try {
+    const response = await api.post(`/budgets/${currentMonth.value}/create-next`)
+    await loadBudgetMonths()
+    currentMonth.value = response.data.month_code
+  } catch (error: any) {
+    alert(error.response?.data?.detail || 'No se pudo crear el siguiente presupuesto')
   }
 }
 
@@ -216,6 +255,16 @@ const updateWeeklyAmount = async (item: WeeklyExpense, allocated_amount: number)
 watch(currentMonth, () => {
   loadData()
 })
+watch(
+  () => route.query.tab,
+  (tab) => {
+    activeTab.value = validTabs.includes(tab as FinanceTab) ? (tab as FinanceTab) : 'resumen'
+  },
+  { immediate: true }
+)
+watch(activeTab, (tab) => {
+  if (route.query.tab !== tab) router.replace({ query: { ...route.query, tab } })
+})
 
 // --- ACCIONES DE PRESUPUESTO ---
 const saveBudgetItem = async (category_id: number, planned_amount: number) => {
@@ -227,21 +276,6 @@ const saveBudgetItem = async (category_id: number, planned_amount: number) => {
     await loadData()
   } catch {
     alert('Error al guardar el límite de la categoría')
-  }
-}
-
-const clonePreviousMonth = async () => {
-  const parts = currentMonth.value.split('-').map(Number)
-  const prevDate = new Date(parts[0]!, parts[1]! - 2, 1)
-  const fromMonth = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`
-
-  if (confirm(`¿Copiar la plantilla de ${fromMonth} a ${currentMonth.value}?`)) {
-    try {
-      await api.post('/budgets/clone', { from_month: fromMonth, to_month: currentMonth.value })
-      await loadData()
-    } catch (error: any) {
-      alert(error.response?.data?.detail || 'Error al clonar el presupuesto')
-    }
   }
 }
 
@@ -272,8 +306,13 @@ const deleteIncome = async (id: number) => {
   }
 }
 
-onMounted(() => {
-  loadData()
+onMounted(async () => {
+  await loadBudgetMonths()
+  if (!availableMonths.value.length) {
+    await api.post('/budgets/initialize', { month_code: getInitialMonth() })
+    await loadBudgetMonths()
+  }
+  currentMonth.value = availableMonths.value.at(-1)?.month_code || ''
 })
 </script>
 
@@ -282,12 +321,20 @@ onMounted(() => {
     <!-- HEADER -->
     <header class="top-bar">
       <div class="month-selector">
-        <button @click="changeMonth(-1)" class="btn-nav">‹</button>
+        <button :disabled="currentMonthIndex <= 0" @click="changeMonth(-1)" class="btn-nav">
+          ‹
+        </button>
         <h2>{{ formattedMonthName }}</h2>
-        <button @click="changeMonth(1)" class="btn-nav">›</button>
+        <button
+          :disabled="currentMonthIndex < 0 || currentMonthIndex >= availableMonths.length - 1"
+          @click="changeMonth(1)"
+          class="btn-nav"
+        >
+          ›
+        </button>
       </div>
 
-      <nav class="tabs-nav">
+      <nav v-if="false" class="tabs-nav">
         <button
           :class="['tab-btn', { active: activeTab === 'resumen' }]"
           @click="activeTab = 'resumen'"
@@ -321,7 +368,20 @@ onMounted(() => {
       </nav>
 
       <div class="top-actions">
-        <button @click="clonePreviousMonth" class="btn-secondary">📋 Copiar Mes Anterior</button>
+        <button
+          v-if="currentBudget"
+          @click="saveBudgetState"
+          class="btn-secondary"
+        >
+          Guardar estado actual
+        </button>
+        <button
+          v-if="currentBudget && isLatestBudget"
+          @click="createNextBudget"
+          class="btn-secondary"
+        >
+          Crear siguiente presupuesto
+        </button>
       </div>
     </header>
 
@@ -411,6 +471,15 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.btn-nav:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+.closed-budget-label {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  font-weight: 650;
 }
 
 .btn-secondary {

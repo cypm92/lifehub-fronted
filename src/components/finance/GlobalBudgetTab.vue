@@ -399,28 +399,30 @@ const getProgressClass = (pct: number) => {
       </div>
     </div>
 
-    <FixedExpensesSummary
-      :fixed-expenses="fixedExpenses"
-      :month-code="monthCode"
-      @view-all="emit('showFixedExpenses')"
-    />
+    <div class="overview-grid">
+      <FixedExpensesSummary
+        :fixed-expenses="fixedExpenses"
+        :month-code="monthCode"
+        @view-all="emit('showFixedExpenses')"
+      />
 
-    <WeeklyExpensesSummary
-      :weekly-expenses="weeklyExpenses"
-      @view-all="emit('showWeeklyControl')"
-    />
+      <WeeklyExpensesSummary
+        :weekly-expenses="weeklyExpenses"
+        @view-all="emit('showWeeklyControl')"
+      />
 
-    <ExtrasSummary
-      :expenses="extraExpenses"
-      :month-code="monthCode"
-      @view-all="emit('showExtraExpenses')"
-    />
-    <ExtrasSummary
-      :expenses="futureExtraExpenses"
-      :month-code="monthCode"
-      :future="true"
-      @view-all="emit('showExtraExpenses')"
-    />
+      <ExtrasSummary
+        :expenses="extraExpenses"
+        :month-code="monthCode"
+        @view-all="emit('showExtraExpenses')"
+      />
+      <ExtrasSummary
+        :expenses="futureExtraExpenses"
+        :month-code="monthCode"
+        :future="true"
+        @view-all="emit('showExtraExpenses')"
+      />
+    </div>
 
     <!-- GRID PRINCIPAL -->
     <div v-if="false" class="main-grid">
@@ -600,6 +602,93 @@ const getProgressClass = (pct: number) => {
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 20px;
   margin-bottom: 16px;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.overview-grid :deep(.fixed-summary),
+.overview-grid :deep(.weekly-summary),
+.overview-grid :deep(.extras-summary) {
+  box-sizing: border-box;
+  min-height: 0;
+  margin: 0;
+  padding: 14px 16px;
+}
+.overview-grid :deep(.summary-header) {
+  margin-bottom: 9px;
+}
+.overview-grid :deep(.summary-header h3) {
+  font-size: 1rem;
+}
+.overview-grid :deep(.summary-header span),
+.overview-grid :deep(.summary-metrics span),
+.overview-grid :deep(.metrics span),
+.overview-grid :deep(.next-payments p),
+.overview-grid :deep(.recent p) {
+  font-size: 0.75rem;
+}
+.overview-grid :deep(.summary-body) {
+  gap: 12px;
+}
+.overview-grid :deep(.summary-metrics),
+.overview-grid :deep(.metrics) {
+  min-width: 0;
+}
+.overview-grid :deep(.summary-metrics div),
+.overview-grid :deep(.metrics div) {
+  padding: 8px;
+}
+.overview-grid :deep(.summary-metrics strong),
+.overview-grid :deep(.metrics strong) {
+  font-size: 0.95rem;
+}
+.overview-grid :deep(.next-payments) {
+  padding-left: 12px;
+}
+.overview-grid :deep(.next-item) {
+  padding: 4px 0;
+  font-size: 0.78rem;
+}
+.overview-grid :deep(.week-item) {
+  min-width: 96px;
+  padding: 6px;
+  font-size: 0.72rem;
+}
+.overview-grid :deep(.week-item small) {
+  font-size: 0.68rem;
+}
+.overview-grid :deep(.weekly-summary .summary-body) {
+  display: block;
+}
+.overview-grid :deep(.weekly-summary .summary-metrics) {
+  margin-bottom: 10px;
+}
+.overview-grid :deep(.weekly-summary .weeks-list) {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+.overview-grid :deep(.weekly-summary .week-item) {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px;
+  align-items: start;
+}
+.overview-grid :deep(.weekly-summary .week-item strong:last-child) {
+  grid-column: 2;
+  margin-left: 0;
+  font-size: 0.76rem;
+}
+.overview-grid :deep(.weekly-summary .week-item small) {
+  line-height: 1.2;
+}
+.overview-grid :deep(.recent-item) {
+  padding: 3px 0;
+  font-size: 0.78rem;
 }
 
 .kpi-header {

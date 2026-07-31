@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import api from '../../services/api'
+import FixedExpensesSummary from './FixedExpensesSummary.vue'
 
 interface FixedExpense {
   id: number
@@ -51,15 +52,6 @@ const groups = ref<FixedExpenseGroup[]>([])
 const editingGroupId = ref<number | null>(null)
 const groupForm = ref({ name: '', color: '#7c3aed' })
 
-const planned = computed(() =>
-  props.fixedExpenses.reduce((total, expense) => total + expense.amount, 0)
-)
-const paid = computed(() =>
-  props.fixedExpenses
-    .filter((expense) => expense.status === 'Pagado')
-    .reduce((total, expense) => total + expense.amount, 0)
-)
-const pending = computed(() => planned.value - paid.value)
 const groupedExpenses = computed(() => {
   const buckets = new Map<
     string,
@@ -212,20 +204,7 @@ const removeGroup = async (group: FixedExpenseGroup) => {
       </div>
     </div>
 
-    <div class="fixed-expenses-metrics">
-      <div>
-        <span>Previsto</span><strong>{{ planned.toFixed(2) }} €</strong>
-      </div>
-      <div>
-        <span>Pagado</span><strong class="text-success">{{ paid.toFixed(2) }} €</strong>
-      </div>
-      <div>
-        <span>Pendiente</span
-        ><strong :class="pending ? 'text-danger' : 'text-success'"
-          >{{ pending.toFixed(2) }} €</strong
-        >
-      </div>
-    </div>
+    <FixedExpensesSummary :fixed-expenses="fixedExpenses" :month-code="monthCode" embedded />
 
     <div v-if="fixedExpenses.length" class="fixed-expenses-list">
       <section v-for="group in groupedExpenses" :key="group.name" class="expense-group">
@@ -394,21 +373,43 @@ const removeGroup = async (group: FixedExpenseGroup) => {
 
 <style scoped>
 .fixed-expenses-card {
-  margin-bottom: 28px;
+  margin-bottom: 0;
+  padding: 10px 14px;
 }
 .fixed-expenses-header {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
-  margin-bottom: 20px;
+  margin-bottom: 6px;
 }
 .header-actions {
   display: flex;
   gap: 8px;
 }
 .fixed-expenses-header h3 {
-  margin: 0 0 4px;
+  margin: 0 0 1px;
+  font-size: 1.05rem;
+}
+.fixed-expenses-card :deep(.fixed-summary.embedded) {
+  margin-bottom: 6px;
+}
+.fixed-expenses-card :deep(.summary-metrics div) {
+  padding: 5px 10px;
+}
+.fixed-expenses-card :deep(.summary-metrics span) {
+  font-size: 0.74rem;
+}
+.fixed-expenses-card :deep(.summary-metrics strong) {
+  font-size: 0.95rem;
+}
+.fixed-expenses-card :deep(.next-payments p) {
+  margin-bottom: 2px;
+  font-size: 0.74rem;
+}
+.fixed-expenses-card :deep(.next-item) {
+  padding: 2px 0;
+  font-size: 0.78rem;
 }
 .subtitle-sm,
 .expense-description,
@@ -416,13 +417,13 @@ const removeGroup = async (group: FixedExpenseGroup) => {
 .fixed-empty-state,
 .modal-header p {
   color: var(--text-muted);
-  font-size: 0.86rem;
+  font-size: 0.76rem;
 }
 .installment-progress {
   display: block;
-  margin-top: 5px;
+  margin-top: 1px;
   color: #4f46e5;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   font-weight: 650;
 }
 .fixed-expenses-metrics {
@@ -450,17 +451,18 @@ const removeGroup = async (group: FixedExpenseGroup) => {
   font-size: 1.15rem;
 }
 .fixed-expenses-list {
-  margin-top: 16px;
+  margin-top: 4px;
   border-top: 1px solid var(--border-color);
 }
 .expense-group + .expense-group {
-  margin-top: 18px;
+  margin-top: 4px;
 }
 .group-heading {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 4px 8px;
+  min-height: 22px;
+  padding: 4px;
   color: var(--text-main);
 }
 .group-heading span:last-child {
@@ -479,22 +481,23 @@ const removeGroup = async (group: FixedExpenseGroup) => {
 .fixed-expense-row {
   display: grid;
   grid-template-columns: 100px minmax(150px, 1fr) minmax(120px, 0.7fr) auto auto;
-  gap: 14px;
+  gap: 8px;
   align-items: center;
-  padding: 12px 4px;
+  min-height: 28px;
+  padding: 3px 4px;
   border-bottom: 1px solid var(--border-color);
 }
 .expense-description {
   display: block;
-  margin-top: 3px;
+  margin-top: 1px;
 }
 .status-button {
   border: 0;
   border-radius: 999px;
-  padding: 6px 9px;
+  padding: 3px 7px;
   cursor: pointer;
   font-weight: 700;
-  font-size: 0.78rem;
+  font-size: 0.7rem;
 }
 .status-button.pagado {
   color: #166534;
@@ -506,7 +509,7 @@ const removeGroup = async (group: FixedExpenseGroup) => {
 }
 .row-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
 }
 .btn-link {
   border: 0;
@@ -514,6 +517,7 @@ const removeGroup = async (group: FixedExpenseGroup) => {
   color: var(--primary);
   cursor: pointer;
   font-weight: 650;
+  font-size: 0.78rem;
 }
 .danger {
   color: #dc2626;
@@ -630,8 +634,8 @@ textarea {
   color: var(--text-main);
 }
 .btn-sm {
-  padding: 8px 12px;
-  font-size: 0.85rem;
+  padding: 6px 10px;
+  font-size: 0.78rem;
 }
 .groups-list {
   border: 1px solid var(--border-color);
