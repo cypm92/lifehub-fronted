@@ -46,7 +46,7 @@ const handleSubmit = async () => {
 <template>
   <div class="login-container">
     <div class="login-card">
-      <h2>🌐 LifeHub</h2>
+      <div class="login-brand"><span>LH</span>LifeHub</div>
       <h3>{{ isRegister ? 'Crear Cuenta' : 'Iniciar Sesión' }}</h3>
 
       <div v-if="errorMessage" class="error-badge">
@@ -90,82 +90,104 @@ const handleSubmit = async () => {
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #0f172a;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(99, 102, 241, 0.18), transparent 32%),
+    radial-gradient(circle at 85% 80%, rgba(14, 165, 233, 0.12), transparent 28%), #111827;
 }
 
 .login-card {
-  background: white;
-  padding: 40px;
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.98);
+  padding: 36px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 16px;
   width: 100%;
   max-width: 400px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.25);
   text-align: center;
 }
 
-.login-card h2 {
-  color: #2563eb;
-  margin-bottom: 5px;
-}
 .login-card h3 {
-  margin-bottom: 25px;
-  color: #334155;
+  margin: 18px 0 24px;
+  color: var(--text-main);
+  font-size: 1.15rem;
+}
+.login-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  color: var(--text-main);
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.login-brand span {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 7px;
+  background: var(--primary);
+  color: white;
+  font-size: 0.62rem;
+  letter-spacing: 0.04em;
 }
 
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 14px;
   text-align: left;
 }
 .form-group {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 6px;
 }
 .form-group label {
   font-size: 0.9rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--text-muted);
 }
 .form-group input,
 .select-input {
-  padding: 10px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 1rem;
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  font-size: 0.92rem;
+  outline: none;
+}
+.form-group input:focus,
+.select-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
 .btn-primary {
   margin-top: 10px;
-  padding: 12px;
-  background: #2563eb;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
+  padding: 11px;
+  border-radius: 9px;
 }
 .btn-primary:hover {
-  background: #1d4ed8;
+  background: var(--primary-hover);
 }
 
 .error-badge {
   background-color: #fee2e2;
   color: #dc2626;
   padding: 10px;
-  border-radius: 6px;
-  font-size: 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
   margin-bottom: 15px;
 }
 
 .toggle-mode {
   margin-top: 20px;
   font-size: 0.9rem;
-  color: #64748b;
+  color: var(--text-muted);
 }
 .toggle-mode a {
-  color: #2563eb;
+  color: var(--primary);
   text-decoration: none;
   font-weight: bold;
 }

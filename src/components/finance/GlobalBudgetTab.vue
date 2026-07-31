@@ -591,16 +591,17 @@ const getProgressClass = (pct: number) => {
 
 <style scoped>
 .card {
-  background: white;
+  background: var(--bg-card);
   padding: 20px;
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-card);
 }
 
 .kpi-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 20px;
+  gap: 14px;
   margin-bottom: 16px;
 }
 
@@ -696,13 +697,16 @@ const getProgressClass = (pct: number) => {
   justify-content: space-between;
   align-items: center;
   color: var(--text-muted);
-  font-weight: 600;
-  font-size: 0.9rem;
+  font-weight: 650;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
 .kpi-amount {
-  font-size: 2.1rem;
-  font-weight: 800;
+  font-size: 2rem;
+  font-weight: 750;
+  letter-spacing: -0.04em;
   margin: 12px 0;
 }
 

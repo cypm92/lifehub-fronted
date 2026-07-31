@@ -27,8 +27,7 @@ body,
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background-color: #f4f6f8;
+  background: var(--bg-app);
 }
 
 .layout {
@@ -40,6 +39,8 @@ body {
   flex: 1;
   min-width: 0;
   overflow-y: auto;
+  scrollbar-color: #cbd5e1 transparent;
+  scrollbar-width: thin;
 }
 .full-content {
   flex: 1;

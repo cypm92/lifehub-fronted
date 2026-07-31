@@ -81,10 +81,11 @@ onMounted(load)
 </template>
 <style scoped>
 .card {
-  background: #fff;
-  padding: 24px;
+  background: var(--bg-card);
+  padding: 20px;
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 header,
 form,
@@ -109,19 +110,21 @@ span {
 form {
   margin: 20px 0;
   padding: 14px;
-  background: #f8fafc;
-  border-radius: 9px;
+  background: var(--bg-subtle);
+  border: 1px solid #edf1f5;
+  border-radius: 10px;
 }
 input,
 select {
   flex: 1;
   padding: 9px;
   border: 1px solid var(--border-color);
-  border-radius: 7px;
+  border-radius: 8px;
+  background: var(--bg-card);
 }
 button {
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   padding: 9px 12px;
   background: var(--primary);
   color: #fff;
