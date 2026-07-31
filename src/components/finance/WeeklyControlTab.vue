@@ -264,7 +264,7 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 
     <!-- Si está vacío, mostramos un aviso amigable en lugar de pantalla en blanco -->
     <div v-else class="card empty-state">
-      <p>📅 No hay control semanal configurado para este mes.</p>
+      <p>No hay control semanal configurado para este mes.</p>
       <span class="subtitle-sm"
         >Prueba a pulsar en el botón superior <strong>"Copiar Mes Anterior"</strong> para generar la
         plantilla.</span
@@ -387,9 +387,9 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 }
 
 .badge-status {
-  padding: 4px 10px;
-  border-radius: 20px;
-  font-size: 0.75rem;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
   font-weight: 700;
   flex-shrink: 0;
   white-space: nowrap;
@@ -397,15 +397,15 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 
 .status-paid {
   background: #dcfce7;
-  color: #15803d;
+  color: #166534;
 }
 .status-stopped {
   background: #fee2e2;
   color: #b91c1c;
 }
 .status-waiting {
-  background: #fef3c7;
-  color: #b45309;
+  background: #fff7e6;
+  color: #a16207;
 }
 
 .week-table {
@@ -449,7 +449,7 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
 .btn-primary,
 .btn-secondary {
   border: 0;
-  border-radius: 8px;
+  border-radius: 9px;
   padding: 8px 12px;
   cursor: pointer;
   font-weight: 650;
@@ -460,12 +460,13 @@ const getWeekStatusBadge = (items: WeeklyExpense[]) => {
   color: white;
 }
 .btn-secondary {
-  background: #e2e8f0;
+  background: #eef2f7;
+  color: var(--text-main);
   color: var(--text-main);
 }
 .btn-danger-outline {
   border: 1px solid #fecaca;
-  border-radius: 8px;
+  border-radius: 9px;
   padding: 8px 12px;
   background: white;
   color: #dc2626;
@@ -602,7 +603,7 @@ label input {
 }
 
 .btn-status-toggle.pagado {
-  background: #22c55e;
+  background: #16a34a;
   color: white;
 }
 .btn-status-toggle.parado {
@@ -610,7 +611,7 @@ label input {
   color: white;
 }
 .btn-status-toggle.esperando {
-  background: #f59e0b;
+  background: #d97706;
   color: white;
 }
 

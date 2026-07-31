@@ -247,10 +247,11 @@ onMounted(load)
 </template>
 <style scoped>
 .card {
-  background: #fff;
-  padding: 24px;
+  background: var(--bg-card);
+  padding: 20px;
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 header,
 header > div,
@@ -279,7 +280,7 @@ small,
 .primary,
 .secondary {
   border: 0;
-  border-radius: 8px;
+  border-radius: 9px;
   padding: 9px 13px;
   font-weight: 700;
   cursor: pointer;
@@ -289,7 +290,8 @@ small,
   color: #fff;
 }
 .secondary {
-  background: #e2e8f0;
+  background: #eef2f7;
+  color: var(--text-main);
 }
 .metrics {
   margin: 18px 0;
@@ -314,16 +316,16 @@ article {
 .future-card {
   margin-top: 20px;
   padding: 16px;
-  border: 1px solid #ddd6fe;
+  border: 1px solid #dfe3f5;
   border-radius: 12px;
-  background: #fcfaff;
+  background: #f8faff;
 }
 .current-card {
   margin-top: 20px;
   padding: 16px;
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  background: #fff;
+  background: var(--bg-subtle);
 }
 .future-header {
   display: flex;

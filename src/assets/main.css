@@ -1,104 +1,117 @@
 :root {
-  /* Paleta de Colores FinSet */
-  --bg-app: #f4f5fa;
+  --bg-app: #f5f7fb;
   --bg-card: #ffffff;
-
-  --primary: #7c3aed; /* Violeta principal */
-  --primary-hover: #6d28d9;
-  --primary-light: #f3e8ff;
-
-  --text-main: #0f172a;
+  --bg-subtle: #f8fafc;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-light: #eef2ff;
+  --text-main: #172033;
   --text-muted: #64748b;
-
-  /* Bordes y Sombras */
-  --border-color: #e2e8f0; /* 👈 Línea limpia y definida */
-  --border-focus: #7c3aed;
-
-  --radius-card: 24px; /* Esquinas bien redondeadas */
-  --radius-input: 12px;
-  --radius-pill: 50px;
-
-  --shadow-card: 0 4px 20px rgba(15, 23, 42, 0.03);
+  --border-color: #e2e8f0;
+  --border-focus: #6366f1;
+  --success: #15803d;
+  --danger: #dc2626;
+  --radius-card: 16px;
+  --radius-input: 10px;
+  --radius-pill: 10px;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.03), 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
-/* Reset Global */
 * {
   box-sizing: border-box;
-  margin: 0;
-  padding: 0;
 }
 
 body {
+  margin: 0;
   font-family:
-    'Inter',
+    Inter,
+    ui-sans-serif,
     system-ui,
     -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
     sans-serif;
-  background-color: var(--bg-app);
+  background: var(--bg-app);
   color: var(--text-main);
+  font-size: 14px;
   -webkit-font-smoothing: antialiased;
 }
 
-/* 🧱 COMPONENTE GLOBAL: TARJETA */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button {
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(99, 102, 241, 0.2);
+  outline-offset: 2px;
+}
+
 .card {
   background: var(--bg-card);
-  padding: 24px;
+  padding: 20px;
+  border: 1px solid var(--border-color);
   border-radius: var(--radius-card);
-  border: 1px solid var(--border-color); /* 👈 Bordes definidos para todas las vistas */
   box-shadow: var(--shadow-card);
 }
 
-/* 📝 COMPONENTES GLOBALES DE FORMULARIO */
 .input,
 select.input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 12px;
   border: 1px solid var(--border-color);
   border-radius: var(--radius-input);
-  background: #f8fafc;
-  font-size: 0.95rem;
+  background: var(--bg-card);
   color: var(--text-main);
   outline: none;
-  transition: all 0.2s ease;
 }
-
 .input:focus,
 select.input:focus {
   border-color: var(--border-focus);
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
 }
 
-/* 🔘 BOTÓN PRINCIPAL GLOBAL */
 .btn-primary {
+  border: 1px solid var(--primary);
+  border-radius: 9px;
+  padding: 9px 14px;
   background: var(--primary);
-  color: white;
-  border: none;
-  padding: 12px 24px;
-  border-radius: var(--radius-pill);
+  color: #fff;
   font-weight: 700;
-  font-size: 0.95rem;
   cursor: pointer;
-  transition: all 0.2s ease;
 }
-
 .btn-primary:hover {
   background: var(--primary-hover);
-  box-shadow: 0 4px 14px rgba(124, 58, 237, 0.3);
+  border-color: var(--primary-hover);
+  box-shadow: 0 6px 14px rgba(79, 70, 229, 0.18);
+}
+.btn-primary:active {
+  transform: translateY(1px);
 }
 
-/* 🏷️ BADGES GLOBALES */
 .badge {
-  padding: 4px 12px;
-  border-radius: var(--radius-pill);
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
   font-weight: 700;
-  font-size: 0.78rem;
 }
 .badge.success {
   background: #dcfce7;
-  color: #15803d;
+  color: var(--success);
 }
 .badge.danger {
   background: #fee2e2;
-  color: #b91c1c;
+  color: var(--danger);
 }

@@ -368,11 +368,7 @@ onMounted(async () => {
       </nav>
 
       <div class="top-actions">
-        <button
-          v-if="currentBudget"
-          @click="saveBudgetState"
-          class="btn-secondary"
-        >
+        <button v-if="currentBudget" @click="saveBudgetState" class="btn-secondary">
           Guardar estado actual
         </button>
         <button
@@ -431,8 +427,8 @@ onMounted(async () => {
 
 <style scoped>
 .dashboard {
-  padding: 16px 32px 20px;
-  background-color: var(--bg-app);
+  padding: 24px 30px 28px;
+  background: var(--bg-app);
   min-height: 100%;
   box-sizing: border-box;
 }
@@ -441,7 +437,7 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 22px;
   flex-wrap: wrap;
   gap: 16px;
 }
@@ -449,28 +445,33 @@ onMounted(async () => {
 .month-selector {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .month-selector h2 {
-  font-size: 1.6rem;
-  font-weight: 800;
+  font-size: 1.45rem;
+  font-weight: 750;
   color: var(--text-main);
   min-width: 180px;
   text-align: center;
 }
 
 .btn-nav {
-  background: white;
-  border: 1.5px solid var(--border-color);
-  border-radius: 50%;
-  width: 38px;
-  height: 38px;
-  font-size: 1.2rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 9px;
+  width: 36px;
+  height: 36px;
+  font-size: 1rem;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+.btn-nav:hover:not(:disabled) {
+  border-color: #c7d2fe;
+  color: var(--primary);
+  box-shadow: var(--shadow-card);
 }
 .btn-nav:disabled {
   cursor: not-allowed;
@@ -483,12 +484,18 @@ onMounted(async () => {
 }
 
 .btn-secondary {
-  background: white;
+  background: var(--bg-card);
   border: 1px solid var(--border-color);
-  padding: 10px 18px;
-  border-radius: 20px;
-  font-weight: 600;
+  padding: 9px 13px;
+  border-radius: 9px;
+  color: var(--text-main);
+  font-weight: 650;
   cursor: pointer;
+}
+.btn-secondary:hover {
+  border-color: #c7d2fe;
+  color: var(--primary);
+  background: #fafaff;
 }
 
 .tabs-nav {
