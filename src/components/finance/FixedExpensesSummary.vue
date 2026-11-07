@@ -6,7 +6,7 @@ interface FixedExpense {
   concept: string
   amount: number
   due_day: number
-  status: 'Esperando' | 'Pagado'
+  status: 'Esperando' | 'Pagado' | 'Parado'
   group_name?: string | null
   group_color?: string | null
 }
@@ -20,7 +20,9 @@ const props = defineProps<{
 const emit = defineEmits<{ (e: 'viewAll'): void }>()
 
 const planned = computed(() =>
-  props.fixedExpenses.reduce((total, expense) => total + expense.amount, 0)
+  props.fixedExpenses
+    .filter((expense) => expense.status !== 'Parado')
+    .reduce((total, expense) => total + expense.amount, 0)
 )
 const paid = computed(() =>
   props.fixedExpenses

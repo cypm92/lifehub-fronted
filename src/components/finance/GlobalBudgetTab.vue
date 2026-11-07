@@ -48,7 +48,7 @@ interface FixedExpense {
   description: string
   due_day: number
   due_date: string
-  status: 'Esperando' | 'Pagado'
+  status: 'Esperando' | 'Pagado' | 'Parado'
   end_date?: string | null
   installments_total?: number | null
   installments_paid: number
@@ -82,6 +82,8 @@ interface SavingsSource {
   name: string
   source_type: string
   balance: number
+  loan_direction?: 'Recibido' | 'Concedido' | null
+  loan_remaining?: number
 }
 
 const props = defineProps<{
@@ -119,7 +121,9 @@ const weeklyCategories = computed(() =>
   props.categories.filter((category) => category.type === 'gasto_semanal')
 )
 const fixedPlanned = computed(() =>
-  props.fixedExpenses.reduce((total, expense) => total + expense.amount, 0)
+  props.fixedExpenses
+    .filter((expense) => expense.status !== 'Parado')
+    .reduce((total, expense) => total + expense.amount, 0)
 )
 const fixedPaid = computed(() =>
   props.fixedExpenses
@@ -159,9 +163,22 @@ const projectedMonthEndBalance = computed(() => remainingThisMonth.value - pendi
 const incomeTransactions = computed(() =>
   props.transactions.filter((transaction) => transaction.type === 'ingreso')
 )
-const savingsTotal = computed(() =>
-  props.savingsSources.reduce((total, source) => total + source.balance, 0)
+const savedSavings = computed(() =>
+  props.savingsSources
+    .filter((source) => source.source_type !== 'Prestamo Familiar')
+    .reduce((total, source) => total + source.balance, 0)
 )
+const loanedOut = computed(() =>
+  props.savingsSources
+    .filter((source) => source.source_type === 'Prestamo Familiar' && source.loan_direction === 'Concedido')
+    .reduce((total, source) => total + (source.loan_remaining || 0), 0)
+)
+const receivedLoans = computed(() =>
+  props.savingsSources
+    .filter((source) => source.source_type === 'Prestamo Familiar' && source.loan_direction === 'Recibido')
+    .reduce((total, source) => total + (source.loan_remaining || 0), 0)
+)
+const savingsTotal = computed(() => savedSavings.value + loanedOut.value)
 const newTransaction = ref({
   concept: '',
   amount: 0,
@@ -316,9 +333,15 @@ const getProgressClass = (pct: number) => {
         </div>
         <div class="kpi-amount text-primary">{{ savingsTotal.toFixed(2) }} €</div>
         <div class="savings-list">
-          <div v-for="source in savingsSources" :key="source.id" class="savings-item">
+          <div v-for="source in savingsSources.filter((source) => source.source_type !== 'Prestamo Familiar')" :key="source.id" class="savings-item">
             <span>{{ source.name }} · {{ source.source_type }}</span
             ><strong>{{ source.balance.toFixed(2) }} €</strong>
+          </div>
+          <div v-if="loanedOut" class="savings-item loan-item">
+            <span>Prestado a familiares</span><strong>{{ loanedOut.toFixed(2) }} €</strong>
+          </div>
+          <div v-if="receivedLoans" class="savings-item loan-item">
+            <span>Préstamo familiar por devolver</span><strong>{{ receivedLoans.toFixed(2) }} €</strong>
           </div>
           <span v-if="!savingsSources.length" class="kpi-subtext"
             >Sin fuentes de ahorro configuradas.</span

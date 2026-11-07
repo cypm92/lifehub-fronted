@@ -77,7 +77,7 @@ interface FixedExpense {
   description: string
   due_day: number
   due_date: string
-  status: 'Esperando' | 'Pagado'
+  status: 'Esperando' | 'Pagado' | 'Parado'
   end_date?: string | null
   installments_total?: number | null
   installments_paid: number

@@ -11,7 +11,7 @@ interface FixedExpense {
   description: string
   due_day: number
   due_date: string
-  status: 'Esperando' | 'Pagado'
+  status: 'Esperando' | 'Pagado' | 'Parado'
   end_date?: string | null
   installments_total?: number | null
   installments_paid: number
@@ -141,7 +141,8 @@ const save = async () => {
 }
 
 const toggleStatus = async (expense: FixedExpense) => {
-  const status = expense.status === 'Pagado' ? 'Esperando' : 'Pagado'
+  const status =
+    expense.status === 'Esperando' ? 'Pagado' : expense.status === 'Pagado' ? 'Parado' : 'Esperando'
   try {
     await api.patch(`/fixed-expenses/monthly/${expense.id}`, { status })
     emit('refresh')
@@ -213,7 +214,10 @@ const removeGroup = async (group: FixedExpenseGroup) => {
           ><strong>{{ group.name }}</strong
           ><span
             >{{
-              group.expenses.reduce((total, expense) => total + expense.amount, 0).toFixed(2)
+              group.expenses
+                .filter((expense) => expense.status !== 'Parado')
+                .reduce((total, expense) => total + expense.amount, 0)
+                .toFixed(2)
             }}
             €</span
           >
@@ -224,7 +228,13 @@ const removeGroup = async (group: FixedExpenseGroup) => {
             :class="expense.status.toLowerCase()"
             @click="toggleStatus(expense)"
           >
-            {{ expense.status === 'Pagado' ? '✓ Pagado' : 'Pendiente' }}
+            {{
+              expense.status === 'Pagado'
+                ? '✓ Pagado'
+                : expense.status === 'Parado'
+                  ? 'Parado'
+                  : 'Pendiente'
+            }}
           </button>
           <div>
             <strong>{{ expense.concept }}</strong>
@@ -506,6 +516,10 @@ const removeGroup = async (group: FixedExpenseGroup) => {
 .status-button.esperando {
   color: #92400e;
   background: #fef3c7;
+}
+.status-button.parado {
+  color: #475569;
+  background: #e2e8f0;
 }
 .row-actions {
   display: flex;
