@@ -14,7 +14,7 @@ const logout = () => {
 </script>
 
 <template>
-  <aside class="sidebar">
+  <aside class="sidebar" :class="{ 'banks-sidebar': route.path.startsWith('/banks') }">
     <router-link to="/settings" class="brand" :class="{ active: route.path === '/settings' }">
       <span class="brand-mark" aria-hidden="true">LH</span>
       <span class="profile-copy">
@@ -207,5 +207,16 @@ const logout = () => {
 }
 .btn-logout:hover {
   color: var(--danger);
+}
+@media (max-width: 700px) {
+  .banks-sidebar { width: 56px; flex-basis: 56px; padding: 16px 6px; }
+  .banks-sidebar .brand { padding: 0 4px 16px; justify-content: center; }
+  .banks-sidebar .brand-mark { flex-shrink: 0; }
+  .banks-sidebar .profile-copy, .banks-sidebar .settings-icon { display: none; }
+  .banks-sidebar .nav-item { padding: 11px; justify-content: center; }
+  .banks-sidebar .nav-item span { font-size: 0; width: 0; overflow: hidden; }
+  .banks-sidebar .sidebar-footer { padding: 12px 0; }
+  .banks-sidebar .btn-logout { font-size: 0; justify-content: center; }
+  .banks-sidebar .btn-logout svg { flex-shrink: 0; }
 }
 </style>

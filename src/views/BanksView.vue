@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
 import api from '../services/api'
+import MovementsDashboard from '../components/banks/MovementsDashboard.vue'
 
 type DestinationType = 'fixed' | 'weekly' | 'extra' | 'income'
 type RuleField = 'concept' | 'counterparty'
@@ -20,6 +21,14 @@ interface BankCoverage { name: string; country: string; total: number; fields: R
 
 const route = useRoute()
 const router = useRouter()
+const dashboard = ref<InstanceType<typeof MovementsDashboard> | null>(null)
+const currentSection = computed(() => route.query.section === 'connections' ? 'connections' : 'movements')
+function selectSection(section: 'movements' | 'connections') {
+  void router.replace({ query: { ...route.query, section: section === 'connections' ? section : undefined } })
+}
+async function refreshPage() {
+  await Promise.all([perform(loadAll), dashboard.value?.refresh()])
+}
 const configured = ref<boolean | null>(null)
 const banks = ref<Bank[]>([])
 const bankError = ref('')
@@ -213,7 +222,7 @@ async function deleteRule(id: number) {
 }
 onMounted(async () => {
   const connected = route.query.connected === '1'
-  if (connected) await router.replace('/banks')
+  if (connected) await router.replace({ query: { ...route.query, connected: undefined, section: 'connections' } })
   await perform(loadAll, connected ? 'Conexión completada.' : '')
 })
 </script>
@@ -222,8 +231,14 @@ onMounted(async () => {
   <div class="banks-page">
     <header class="page-header">
       <div><span class="eyebrow">OPEN BANKING · USO PERSONAL</span><h1>Bancos <span class="beta">beta</span></h1><p>Explora los datos bancarios y registra asignaciones sin alterar tus presupuestos.</p></div>
-      <button class="secondary" :disabled="busy" @click="perform(loadAll)">Actualizar</button>
+      <button class="secondary" :disabled="busy" @click="refreshPage">Actualizar</button>
     </header>
+    <nav class="section-tabs" aria-label="Secciones de bancos">
+      <button class="secondary" :class="{ selected: currentSection === 'movements' }" :aria-pressed="currentSection === 'movements'" @click="selectSection('movements')">Movimientos</button>
+      <button class="secondary" :class="{ selected: currentSection === 'connections' }" :aria-pressed="currentSection === 'connections'" @click="selectSection('connections')">Conexiones y reglas</button>
+    </nav>
+    <MovementsDashboard v-if="currentSection === 'movements'" ref="dashboard" :connections="connections" />
+    <template v-else>
     <p v-if="error" class="feedback error" role="alert">{{ error }}</p>
     <p v-if="notice" class="feedback success" role="status">{{ notice }}</p>
     <p v-if="busy" class="loading" role="status">Procesando…</p>
@@ -285,6 +300,7 @@ onMounted(async () => {
       <p v-if="!coverage.length" class="empty">Conecta y sincroniza un banco para ver los campos disponibles.</p>
       <div v-for="bank in coverage" :key="`${bank.name}-${bank.country}`" class="coverage-bank"><h3>{{ bank.name }} · {{ bank.country }}</h3><p class="muted small">{{ bank.total }} movimientos guardados</p><div class="field-grid"><span v-for="(count, field) in bank.fields" :key="field">{{ fieldLabels[field] || field }} <strong>{{ count.present }}/{{ count.total }}</strong></span></div><p class="muted small">Estados recibidos: {{ Object.entries(bank.statuses).map(([name, count]) => `${name}: ${count}`).join(' · ') || 'ninguno' }}</p><details v-for="account in bank.accounts" :key="account.id"><summary>{{ account.name || `Cuenta ${account.id}` }} · {{ account.total }} movimientos</summary><div class="field-grid"><span v-for="(count, field) in account.fields" :key="field">{{ fieldLabels[field] || field }} <strong>{{ count.present }}/{{ count.total }}</strong></span></div><p class="muted small">Estados: {{ Object.entries(account.statuses).map(([name, count]) => `${name}: ${count}`).join(' · ') || 'ninguno' }}</p></details></div>
     </section>
+    </template>
   </div>
 </template>
 
@@ -295,6 +311,7 @@ onMounted(async () => {
 h1,h2,h3,p { margin: 0; } h1 { font-size: 1.9rem; margin: 5px 0; } h2 { font-size: 1.1rem; } h3 { font-size: 1rem; }
 .page-header p,.muted { color: var(--text-muted); } .muted { margin-top: 6px; line-height: 1.5; } .small { font-size: .78rem; }
 .eyebrow { color: var(--primary); font-weight: 800; font-size: .7rem; letter-spacing: .08em; } .beta { font-size: .7rem; background: var(--primary-light); color: var(--primary); padding: 4px 8px; border-radius: 10px; vertical-align: middle; }
+.section-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
 .card { min-width: 0; } .setup { display: grid; gap: 12px; } .feedback { padding: 12px 14px; border-radius: 9px; } .feedback.error { color: #991b1b; background: #fee2e2; } .feedback.success { color: #166534; background: #dcfce7; } .warning { background: #fef3c7; color: #92400e; } .loading { color: var(--text-muted); }
 .inline-form { display: flex; align-items: end; gap: 10px; } .inline-form label { flex: 1; max-width: 620px; } label { display: grid; gap: 5px; font-weight: 650; font-size: .82rem; } .secondary { border: 1px solid var(--border-color); border-radius: 9px; padding: 8px 12px; background: white; color: var(--text-main); font-weight: 650; cursor: pointer; } .secondary:hover { background: var(--bg-subtle); } button:disabled { opacity: .5; cursor: not-allowed; } .destructive { color: var(--danger); } .selected { border-color: var(--primary); color: var(--primary); background: var(--primary-light); }
 .connection-row,.rule-row { padding: 14px 0; border-top: 1px solid var(--border-color); } .connection-row:first-of-type,.rule-row:first-of-type { margin-top: 14px; } .actions,.account-tabs,.pagination { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; } .account-tabs { margin-top: 16px; } .account-detail { margin-top: 14px; padding: 12px; background: var(--bg-subtle); border-radius: 10px; }

@@ -15,4 +15,51 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+export interface MovementAssignment {
+  id: number
+  transaction_id: number
+  destination_type: 'fixed' | 'weekly' | 'extra' | 'income'
+  destination_id: number | null
+}
+
+export interface BankMovement {
+  id: number
+  date: string
+  amount: number | null
+  currency: string | null
+  direction: string | null
+  status: string | null
+  counterparty: string | null
+  concept: string
+  account_id: number
+  account_name: string | null
+  account_type: string | null
+  connection_id: number
+  bank_name: string
+  is_internal_transfer: boolean
+  assignment: MovementAssignment | null
+}
+
+export interface MovementAccount {
+  id: number
+  connection_id: number
+  bank_name: string
+  name: string | null
+  type: string | null
+  currency: string | null
+  balance: { amount: number; currency: string | null } | null
+}
+
+export interface MovementsResponse {
+  movements: BankMovement[]
+  accounts: MovementAccount[]
+}
+
+export async function getBankMovements(days = 90, connectionId: number | null = null): Promise<MovementsResponse> {
+  const { data } = await api.get<MovementsResponse>('/banks/movements', {
+    params: { days, connection_id: connectionId ?? undefined },
+  })
+  return data
+}
+
 export default api
