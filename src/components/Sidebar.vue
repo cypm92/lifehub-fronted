@@ -40,6 +40,10 @@ const logout = () => {
         <router-link to="/finances?tab=extras">Otros gastos</router-link>
         <router-link to="/finances?tab=ahorros">Ahorros</router-link>
       </div>
+      <router-link to="/banks" class="nav-item" :class="{ active: route.path.startsWith('/banks') }">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10 12 4l9 6H3ZM5 10v7m5-7v7m4-7v7m5-7v7M3 20h18" /></svg>
+        <span>Bancos (beta)</span>
+      </router-link>
       <router-link to="/vehicles" class="nav-item" :class="{ active: route.path === '/vehicles' }">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m5 12 2-5h10l2 5M4 12h16v6H4zM7 18v2m10-2v2M7 15h.01M17 15h.01" /></svg
