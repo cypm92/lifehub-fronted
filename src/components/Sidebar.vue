@@ -14,7 +14,7 @@ const logout = () => {
 </script>
 
 <template>
-  <aside class="sidebar">
+  <aside class="sidebar" :class="{ 'banks-sidebar': route.path.startsWith('/banks') }">
     <router-link to="/settings" class="brand" :class="{ active: route.path === '/settings' }">
       <span class="brand-mark" aria-hidden="true">LH</span>
       <span class="profile-copy">
@@ -40,6 +40,10 @@ const logout = () => {
         <router-link to="/finances?tab=extras">Otros gastos</router-link>
         <router-link to="/finances?tab=ahorros">Ahorros</router-link>
       </div>
+      <router-link to="/banks" class="nav-item" :class="{ active: route.path.startsWith('/banks') }">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10 12 4l9 6H3ZM5 10v7m5-7v7m4-7v7m5-7v7M3 20h18" /></svg>
+        <span>Bancos (beta)</span>
+      </router-link>
       <router-link to="/vehicles" class="nav-item" :class="{ active: route.path === '/vehicles' }">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m5 12 2-5h10l2 5M4 12h16v6H4zM7 18v2m10-2v2M7 15h.01M17 15h.01" /></svg
@@ -203,5 +207,16 @@ const logout = () => {
 }
 .btn-logout:hover {
   color: var(--danger);
+}
+@media (max-width: 700px) {
+  .banks-sidebar { width: 56px; flex-basis: 56px; padding: 16px 6px; }
+  .banks-sidebar .brand { padding: 0 4px 16px; justify-content: center; }
+  .banks-sidebar .brand-mark { flex-shrink: 0; }
+  .banks-sidebar .profile-copy, .banks-sidebar .settings-icon { display: none; }
+  .banks-sidebar .nav-item { padding: 11px; justify-content: center; }
+  .banks-sidebar .nav-item span { font-size: 0; width: 0; overflow: hidden; }
+  .banks-sidebar .sidebar-footer { padding: 12px 0; }
+  .banks-sidebar .btn-logout { font-size: 0; justify-content: center; }
+  .banks-sidebar .btn-logout svg { flex-shrink: 0; }
 }
 </style>

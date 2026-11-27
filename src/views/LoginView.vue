@@ -35,8 +35,8 @@ const handleSubmit = async () => {
     localStorage.setItem('token', response.data.access_token)
     localStorage.setItem('user', JSON.stringify(response.data.user))
 
-    // Redirigir al panel principal
-    router.push('/finances')
+    // Reanudar un retorno bancario interrumpido por el inicio de sesión.
+    router.push(sessionStorage.getItem('bankCallback') ? '/banks/callback' : '/finances')
   } catch (err: any) {
     errorMessage.value = err.response?.data?.detail || 'Error al procesar la solicitud'
   }
